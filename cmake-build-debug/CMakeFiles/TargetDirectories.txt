@@ -1,0 +1,3 @@
+/home/mrpiao/Desktop/ServerProject/cmake-build-debug/CMakeFiles/ServerProject.dir
+/home/mrpiao/Desktop/ServerProject/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/mrpiao/Desktop/ServerProject/cmake-build-debug/CMakeFiles/rebuild_cache.dir
