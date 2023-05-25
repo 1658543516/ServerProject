@@ -17,6 +17,14 @@ namespace srvpro{
     public:
         typedef std::shared_ptr<LogEvent> ptr;
         LogEvent();
+
+        const char* getFile() const {return m_file};
+        int32_t getLine() const {return m_line};
+        uint32_t getElapse() const {return m_elapse};
+        uint32_t getThreadID() const {return m_threadID};
+        uint64_t getTime() const {return m_time};
+        const std::string_view getContent() const {return m_content};
+
     private:
         const char* m_file = nullptr; //文件名
         int32_t m_line = 0; //行号
@@ -31,27 +39,33 @@ namespace srvpro{
     class LogLevel{
     public:
         enum Level{
+            UNKNOWN = 0,
             DEBUG = 1,
             INFO = 2,
             WARN = 3,
             ERROR = 4,
             FATAL = 5
         };
+
+        static const char* toString(LogLevel::Level level);
     };
 
     //日志格式器
     class LogFormatter{
     public:
         typedef std::shared_ptr<LogFormatter> ptr;
-        std::string_view format(LogEvent::ptr event);
-    private:
+        LogFormatter(const std::string_view& pattern);
+        std::string_view format(LogLevel::Level level, LogEvent::ptr event);
+    public:
         class FormatItem{
         public:
             typedef std::shared_ptr<FormatItem> ptr;
             FormatItem() = default;
             virtual ~FormatItem() {}
-            virtual std::string_view format(LogEvent::ptr event);
+            virtual void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) = 0;
         };
+
+        void init();
     private:
         std::string_view m_pattern;
         std::list<FormatItem::ptr> m_log_formatter_items;
