@@ -10,20 +10,22 @@
 #include <sstream>
 #include <fstream>
 
+//
 namespace srvpro{
-
+    class Logger;
     //日志事件
     class LogEvent{
     public:
         typedef std::shared_ptr<LogEvent> ptr;
-        LogEvent();
+        LogEvent(const char* file, int32_t line, uint32_t elapse, uint32_t threadID, uint32_t fiberID, uint64_t time)
+        :m_file(file), m_line(line), m_elapse(elapse), m_threadID(threadID), m_fiberID(fiberID), m_time(time) {}
 
-        const char* getFile() const {return m_file};
-        int32_t getLine() const {return m_line};
-        uint32_t getElapse() const {return m_elapse};
-        uint32_t getThreadID() const {return m_threadID};
-        uint64_t getTime() const {return m_time};
-        const std::string_view getContent() const {return m_content};
+        const char* getFile() const {return m_file;}
+        int32_t getLine() const {return m_line;}
+        uint32_t getElapse() const {return m_elapse;}
+        uint32_t getThreadID() const {return m_threadID;}
+        uint64_t getTime() const {return m_time;}
+        const std::string_view getContent() const {return m_content;}
 
     private:
         const char* m_file = nullptr; //文件名
@@ -55,14 +57,16 @@ namespace srvpro{
     public:
         typedef std::shared_ptr<LogFormatter> ptr;
         LogFormatter(const std::string_view& pattern);
-        std::string_view format(LogLevel::Level level, LogEvent::ptr event);
+        std::string_view format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+
     public:
         class FormatItem{
         public:
             typedef std::shared_ptr<FormatItem> ptr;
-            FormatItem() = default;
+            FormatItem(const std::string_view& fmt = "") {};
+            //FormatItem() = default;
             virtual ~FormatItem() {}
-            virtual void format(std::ostream& os, LogLevel::Level level, LogEvent::ptr event) = 0;
+            virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
         };
 
         void init();
@@ -77,7 +81,7 @@ namespace srvpro{
         typedef std::shared_ptr<LogAppender> ptr;
         virtual ~LogAppender() = default;
 
-        virtual void log(LogLevel::Level level, LogEvent::ptr event) = 0;
+        virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
 
         void setLogFormatter(LogFormatter::ptr formatter);
         LogFormatter::ptr getLogFormatter();
@@ -87,7 +91,7 @@ namespace srvpro{
     };
 
     //日志器
-    class Logger{
+class Logger : public std::enable_shared_from_this<Logger>{
     public:
         typedef std::shared_ptr<Logger> ptr;
         explicit Logger(const std::string_view & name="root");
@@ -104,18 +108,19 @@ namespace srvpro{
         void setLevel(LogLevel::Level level);
         LogLevel::Level getLevel() const;
 
+        const std::string_view getName() const {return m_name;}
     private:
         std::string_view m_name; //日志名称
         LogLevel::Level m_level; //日志级别
         std::list<LogAppender::ptr> m_appender_list; //Appender集合
-
+        LogFormatter::ptr  m_formatter;
     };
 
     //输出到控制台的Appender
     class StdoutLogAppender : public LogAppender{
     public:
         typedef std::shared_ptr<StdoutLogAppender> ptr;
-        void log(LogLevel::Level level, LogEvent::ptr event) override;
+        void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event);
     private:
 
     };
@@ -125,12 +130,15 @@ namespace srvpro{
     public:
         typedef std::shared_ptr<FileLogAppender> ptr;
         explicit FileLogAppender(std::string  filename);
-        void log(LogLevel::Level level, LogEvent::ptr event) override;
+        void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event);
         bool reopen(); //如果文件打开，则先关闭再打开
     private:
         std::string m_filename;
         std::ofstream m_filestream;
     };
+
+
+
 }
 
 
