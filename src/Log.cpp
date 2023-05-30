@@ -60,12 +60,21 @@ namespace srvpro{
 
     class DateTimeFormatItem : public LogFormatter::FormatItem {
     public:
-        explicit DateTimeFormatItem(const std::string_view& format="%Y:%m:%d %H:%M:%S"):m_format(format) {}
+        explicit DateTimeFormatItem(const std::string& format="%Y:%m:%d %H:%M:%S"):m_format(format) {
+            if(m_format.empty()) {
+                m_format = "%Y-%m-%d %H:%M:%S";
+            }
+        }
         void format(std::ostream& os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override {
-            os << event->getTime();
+            struct tm tm;
+            time_t time = event->getTime();
+            localtime_r(&time, &tm);
+            char buf[64];
+            strftime(buf, sizeof(buf), m_format.c_str(), &tm);
+            os << buf;
         }
     private:
-        std::string_view m_format;
+        std::string m_format;
     };
 
     class FilenameFormatItem : public LogFormatter::FormatItem {
@@ -103,7 +112,8 @@ namespace srvpro{
     };
 
     Logger::Logger(const std::string_view &name):m_name(name), m_level(LogLevel::DEBUG) {
-        m_formatter.reset(new LogFormatter("%d [%p] %f %l %m %n"));
+        //%d [%p] %f %l %m %n
+        m_formatter.reset(new LogFormatter("%d  [%p] <%f:%l>   %m %n"));
     }
 
     void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
@@ -208,7 +218,7 @@ namespace srvpro{
         return m_log_formatter;
     }
 
-    LogFormatter::LogFormatter(const std::string_view& pattern):m_pattern(pattern) {
+    LogFormatter::LogFormatter(const std::string& pattern):m_pattern(pattern) {
         init();
     }
 
@@ -227,6 +237,15 @@ namespace srvpro{
         // str, format, type
         std::vector<std::tuple<std::string, std::string, int>> format_vec;
         std::string nstr;
+        // "%d [%p] %f %l %m %n""%d  [ %p]  %f %l %m %n"
+        int index = 0;
+        while(index < m_pattern.size()) {
+            if(m_pattern[index] == '%' && m_pattern[index + 1] != '%') {
+                m_pattern.insert(index+2, " ");
+                index += 2;
+            }
+            ++index;
+        }
 
         for (size_t i = 0; i < m_pattern.size(); ++i) {
             if (m_pattern[i] != '%') {
@@ -269,6 +288,7 @@ namespace srvpro{
                         break;
                     }
                 }
+                ++n;
             }
 
             if (fmt_status == 0) {
@@ -278,6 +298,7 @@ namespace srvpro{
                 str = m_pattern.substr(i + 1, n - i - 1);
                 format_vec.emplace_back(str, fmt, 1);
                 i = n;
+                nstr.clear();
             }
             else if (fmt_status == 1) {
                 std::cout << "pattern parse error: " << m_pattern << " - " << m_pattern.substr(i) << std::endl;
@@ -289,6 +310,7 @@ namespace srvpro{
                 }
                 format_vec.emplace_back(str, fmt, 1);
                 i = n;
+                nstr.clear();
             }
 
         }
@@ -326,7 +348,7 @@ namespace srvpro{
                     m_log_formatter_items.emplace_back(it->second(std::get<1>(i)));
                 }
             }
-            std::cout << std::get<0>(i) << " - " << std::get<1>(i) << " - " << std::get<2>(i) << " - " << std::endl;
+            std::cout << "(" << std::get<0>(i) << ") - (" << std::get<1>(i) << ") - (" << std::get<2>(i) << ")" << std::endl;
         }
     }
 

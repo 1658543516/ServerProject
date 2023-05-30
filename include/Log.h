@@ -56,7 +56,7 @@ namespace srvpro{
     class LogFormatter{
     public:
         typedef std::shared_ptr<LogFormatter> ptr;
-        LogFormatter(const std::string_view& pattern);
+        LogFormatter(const std::string& pattern);
         std::string_view format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
 
     public:
@@ -71,7 +71,7 @@ namespace srvpro{
 
         void init();
     private:
-        std::string_view m_pattern;
+        std::string m_pattern;
         std::list<FormatItem::ptr> m_log_formatter_items;
     };
 
