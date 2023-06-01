@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(ServerProject)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 
-add_executable(ServerProject main.cpp src/Log.cpp)
+add_executable(ServerProject main.cpp src/Log.cpp include/util.h src/util.cpp include/singleton.h)
 
 include_directories(include)

@@ -51,14 +51,21 @@ build cmake_object_order_depends_target_ServerProject: phony || CMakeFiles/Serve
 
 build CMakeFiles/ServerProject.dir/main.cpp.o: CXX_COMPILER__ServerProject_Debug /home/mrpiao/Desktop/ServerProject/main.cpp || cmake_object_order_depends_target_ServerProject
   DEP_FILE = CMakeFiles/ServerProject.dir/main.cpp.o.d
-  FLAGS = -g -fdiagnostics-color=always
+  FLAGS = -g -fdiagnostics-color=always -std=gnu++11
   INCLUDES = -I/home/mrpiao/Desktop/ServerProject/include
   OBJECT_DIR = CMakeFiles/ServerProject.dir
   OBJECT_FILE_DIR = CMakeFiles/ServerProject.dir
 
 build CMakeFiles/ServerProject.dir/src/Log.cpp.o: CXX_COMPILER__ServerProject_Debug /home/mrpiao/Desktop/ServerProject/src/Log.cpp || cmake_object_order_depends_target_ServerProject
   DEP_FILE = CMakeFiles/ServerProject.dir/src/Log.cpp.o.d
-  FLAGS = -g -fdiagnostics-color=always
+  FLAGS = -g -fdiagnostics-color=always -std=gnu++11
+  INCLUDES = -I/home/mrpiao/Desktop/ServerProject/include
+  OBJECT_DIR = CMakeFiles/ServerProject.dir
+  OBJECT_FILE_DIR = CMakeFiles/ServerProject.dir/src
+
+build CMakeFiles/ServerProject.dir/src/util.cpp.o: CXX_COMPILER__ServerProject_Debug /home/mrpiao/Desktop/ServerProject/src/util.cpp || cmake_object_order_depends_target_ServerProject
+  DEP_FILE = CMakeFiles/ServerProject.dir/src/util.cpp.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu++11
   INCLUDES = -I/home/mrpiao/Desktop/ServerProject/include
   OBJECT_DIR = CMakeFiles/ServerProject.dir
   OBJECT_FILE_DIR = CMakeFiles/ServerProject.dir/src
@@ -71,7 +78,7 @@ build CMakeFiles/ServerProject.dir/src/Log.cpp.o: CXX_COMPILER__ServerProject_De
 #############################################
 # Link the executable ServerProject
 
-build ServerProject: CXX_EXECUTABLE_LINKER__ServerProject_Debug CMakeFiles/ServerProject.dir/main.cpp.o CMakeFiles/ServerProject.dir/src/Log.cpp.o
+build ServerProject: CXX_EXECUTABLE_LINKER__ServerProject_Debug CMakeFiles/ServerProject.dir/main.cpp.o CMakeFiles/ServerProject.dir/src/Log.cpp.o CMakeFiles/ServerProject.dir/src/util.cpp.o
   FLAGS = -g
   OBJECT_DIR = CMakeFiles/ServerProject.dir
   POST_BUILD = :

@@ -6,36 +6,31 @@
 #define SERVERPROJECT_LOG_H
 #include <memory>
 #include <string>
-#include <list>
+#include <vector>
 #include <sstream>
 #include <fstream>
+#include <map>
+#include "singleton.h"
 
-//
+#define SRVPRO_LOG_LEVEL(logger, level) \
+        if(logger->getLevel() <= level) \
+            srvpro::LogEventWrap(srvpro::LogEvent::ptr(new srvpro::LogEvent(logger, level, __FILE__, __LINE__, 0, srvpro::GetThreadID(), srvpro::GetFiberID(), time(0)))).getSS()
+#define SRVPRO_LOG_DEBUG(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::DEBUG)
+#define SRVPRO_LOG_INFO(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::INFO)
+#define SRVPRO_LOG_WARN(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::WARN)
+#define SRVPRO_LOG_ERROR(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::ERROR)
+#define SRVPRO_LOG_FATAL(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::FATAL)
+
+#define SRVPRO_LOG_FMT_LEVEL(logger, level, fmt, ...) \
+        if (logger->getLevel() <= level)              \
+            srvpro::LogEventWrap(srvpro::LogEvent::ptr(new srvpro::LogEvent(logger, level, __FILE__, __LINE__, 0, srvpro::GetThreadID(), srvpro::GetFiberID(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
+#define SRVPRO_LOG_FMT_DEBUG(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::DEBUG, fmt, __VA_ARGS__)
+#define SRVPRO_LOG_FMT_INFO(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::INFO, fmt, __VA_ARGS__)
+#define SRVPRO_LOG_FMT_WARN(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::WARN, fmt, __VA_ARGS__)
+#define SRVPRO_LOG_FMT_ERROR(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::ERROR, fmt, __VA_ARGS__)
+#define SRVPRO_LOG_FMT_FATAL(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::FATAL, fmt, __VA_ARGS__)
 namespace srvpro{
     class Logger;
-    //日志事件
-    class LogEvent{
-    public:
-        typedef std::shared_ptr<LogEvent> ptr;
-        LogEvent(const char* file, int32_t line, uint32_t elapse, uint32_t threadID, uint32_t fiberID, uint64_t time)
-        :m_file(file), m_line(line), m_elapse(elapse), m_threadID(threadID), m_fiberID(fiberID), m_time(time) {}
-
-        const char* getFile() const {return m_file;}
-        int32_t getLine() const {return m_line;}
-        uint32_t getElapse() const {return m_elapse;}
-        uint32_t getThreadID() const {return m_threadID;}
-        uint64_t getTime() const {return m_time;}
-        const std::string_view getContent() const {return m_content;}
-
-    private:
-        const char* m_file = nullptr; //文件名
-        int32_t m_line = 0; //行号
-        uint32_t m_elapse = 0; //程序启动开始到现在的毫秒数
-        uint32_t m_threadID = 0; //线程id
-        uint32_t m_fiberID = 0; //协程id
-        uint64_t m_time = 0; //时间戳
-        std::string_view m_content;
-    };
 
     //日志级别
     class LogLevel{
@@ -52,18 +47,65 @@ namespace srvpro{
         static const char* toString(LogLevel::Level level);
     };
 
+    //日志事件
+    class LogEvent{
+    public:
+        typedef std::shared_ptr<LogEvent> ptr;
+        LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, char* file, int32_t line, uint32_t elapse, uint32_t threadID, uint32_t fiberID, uint64_t time)
+        :m_logger(logger), m_level(level),m_file(file), m_line(line), m_elapse(elapse), m_threadID(threadID), m_fiberID(fiberID), m_time(time) {}
+
+        const char* getFile() const {return m_file;}
+        int32_t getLine() const {return m_line;}
+        uint32_t getElapse() const {return m_elapse;}
+        uint32_t getThreadID() const {return m_threadID;}
+        uint32_t getFiberID() const {return m_fiberID;}
+        uint64_t getTime() const {return m_time;}
+        const std::string getContent() const {return m_ss.str();}
+        std::stringstream& getSS() { return m_ss;}
+        std::shared_ptr<Logger> getLogger() const {return m_logger;}
+        LogLevel::Level getLevel() const {return m_level;}
+
+        void format(const char* fmt, ...);
+        void format(const char* fmt, va_list al);
+
+    private:
+        const char* m_file = nullptr; //文件名
+        int32_t m_line = 0; //行号
+        uint32_t m_elapse = 0; //程序启动开始到现在的毫秒数
+        uint32_t m_threadID = 0; //线程id
+        uint32_t m_fiberID = 0; //协程id
+        uint64_t m_time = 0; //时间戳
+        std::string m_content;
+        std::stringstream m_ss;
+
+        std::shared_ptr<Logger> m_logger;
+        LogLevel::Level m_level;
+    };
+
+    class LogEventWrap {
+    public:
+        LogEventWrap(LogEvent::ptr e);
+        ~LogEventWrap();
+
+        LogEvent::ptr getEvent() const {return m_event;}
+
+        std::stringstream& getSS();
+    private:
+        LogEvent::ptr m_event;
+    };
+
     //日志格式器
     class LogFormatter{
     public:
         typedef std::shared_ptr<LogFormatter> ptr;
         LogFormatter(const std::string& pattern);
-        std::string_view format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+        std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
 
     public:
         class FormatItem{
         public:
             typedef std::shared_ptr<FormatItem> ptr;
-            FormatItem(const std::string_view& fmt = "") {};
+            FormatItem(const std::string& fmt = "") {};
             //FormatItem() = default;
             virtual ~FormatItem() {}
             virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
@@ -72,7 +114,7 @@ namespace srvpro{
         void init();
     private:
         std::string m_pattern;
-        std::list<FormatItem::ptr> m_log_formatter_items;
+        std::vector<FormatItem::ptr> m_log_formatter_items;
     };
 
     //日志输出地
@@ -85,8 +127,11 @@ namespace srvpro{
 
         void setLogFormatter(LogFormatter::ptr formatter);
         LogFormatter::ptr getLogFormatter();
+
+        LogLevel::Level getLevel() const {return m_level;}
+        void setLevel(LogLevel::Level level) {m_level = level;}
     protected:
-        LogLevel::Level m_level;
+        LogLevel::Level m_level = LogLevel::DEBUG;
         LogFormatter::ptr m_log_formatter;
     };
 
@@ -94,7 +139,7 @@ namespace srvpro{
 class Logger : public std::enable_shared_from_this<Logger>{
     public:
         typedef std::shared_ptr<Logger> ptr;
-        explicit Logger(const std::string_view & name="root");
+        explicit Logger(const std::string & name="root");
         void log(LogLevel::Level level, LogEvent::ptr event);
         void debug(LogEvent::ptr event);
         void info(LogEvent::ptr event);
@@ -108,11 +153,12 @@ class Logger : public std::enable_shared_from_this<Logger>{
         void setLevel(LogLevel::Level level);
         LogLevel::Level getLevel() const;
 
-        const std::string_view getName() const {return m_name;}
+        const std::string getName() const {return m_name;}
+        LogFormatter::ptr getFormatter() const {return m_formatter;}
     private:
-        std::string_view m_name; //日志名称
+        std::string m_name; //日志名称
         LogLevel::Level m_level; //日志级别
-        std::list<LogAppender::ptr> m_appender_list; //Appender集合
+        std::vector<LogAppender::ptr> m_appender_list; //Appender集合
         LogFormatter::ptr  m_formatter;
     };
 
@@ -137,8 +183,18 @@ class Logger : public std::enable_shared_from_this<Logger>{
         std::ofstream m_filestream;
     };
 
+    class LoggerManager{
+    public:
+        LoggerManager();
+        Logger::ptr getLogger(const std::string& name);
 
+        void init();
+    private:
+        std::map<std::string, Logger::ptr> m_loggers;
+        Logger::ptr m_root;
+    };
 
+    typedef srvpro::Singleton<LoggerManager> LoggerMgr;
 }
 
 
