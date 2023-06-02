@@ -11,6 +11,7 @@
 #include "util.h"
 #include <boost/lexical_cast.hpp>
 
+
 namespace srvpro {
 
     class ConfigVarBase {

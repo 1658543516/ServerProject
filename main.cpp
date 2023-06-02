@@ -4,24 +4,39 @@
 #include "util.h"
 #include "config.h"
 #include <unistd.h>
+#include <yaml-cpp/yaml.h>
 
 srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
 
+void print_yaml(const YAML::Node& node, int level) {
+    if (node.IsScalar()) {
+        SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << std::string(level * 4, ' ') << node.Scalar() << " - " << node.Type() << " - " << level;
+    }
+    else if(node.IsNull()) {
+        SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << std::string(level * 4, ' ') << "NULL - " << node.Type() << " - " << level;
+    }
+    else if(node.IsMap()) {
+        for (auto it = node.begin(); it != node.end() ; ++it) {
+            SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << std::string(level * 4, ' ') << it->first << " - " << it->second.Type() << " - " << level;
+            print_yaml(it->second, level + 1);
+        }
+    }
+    else if(node.IsSequence()) {
+        for (size_t i = 0; i < node.size() ; ++i) {
+            SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << std::string(level * 4, ' ') << i << " - " << node[i].Type() << " - " << level;
+            print_yaml(node[i], level + 1);
+        }
+    }
+}
+
+void test_yaml() {
+    YAML::Node root = YAML::LoadFile("../conf/log.yml");
+    print_yaml(root, 0);
+    //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << root;
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
-    /*
-     * (d) - () - (1)
-     * ([ ) - () - (0)
-     * (p) - () - (1)
-     * (] ) - () - (0)
-     * (f) - () - (1)
-     * ( ) - () - (0)
-     * (l) - () - (1)
-     * ( ) - () - (0)
-     * (m) - () - (1)
-     * ( ) - () - (0)
-     * (n) - () - (1)
-     * */
     srvpro::Logger::ptr logger(new srvpro::Logger);
     logger->addAppender(srvpro::LogAppender::ptr(new srvpro::StdoutLogAppender));
     char* current_path = get_current_dir_name();
@@ -48,5 +63,7 @@ int main() {
 
     SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->getValue();
     SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->toString();
+
+    test_yaml();
     return 0;
 }
