@@ -1,2 +1,2 @@
-2023-06-01 18:42:15	5284	0	[ERROR]	[root]	/home/mrpiao/Desktop/ServerProject/main.cpp:39	test error
-2023-06-01 18:42:15	5284	0	[ERROR]	[root]	/home/mrpiao/Desktop/ServerProject/main.cpp:41	test fmt aa
+2023-06-02 19:03:42	15511	0	[ERROR]	[root]	/home/mrpiao/Desktop/ServerProject/main.cpp:42	test error
+2023-06-02 19:03:42	15511	0	[ERROR]	[root]	/home/mrpiao/Desktop/ServerProject/main.cpp:44	test fmt aa

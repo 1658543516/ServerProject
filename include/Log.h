@@ -29,6 +29,9 @@
 #define SRVPRO_LOG_FMT_WARN(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::WARN, fmt, __VA_ARGS__)
 #define SRVPRO_LOG_FMT_ERROR(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::ERROR, fmt, __VA_ARGS__)
 #define SRVPRO_LOG_FMT_FATAL(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::FATAL, fmt, __VA_ARGS__)
+
+#define SRVPRO_LOG_ROOT() srvpro::LoggerMgr::GetInstance()->getRoot()
+
 namespace srvpro{
     class Logger;
 
@@ -189,6 +192,8 @@ class Logger : public std::enable_shared_from_this<Logger>{
         Logger::ptr getLogger(const std::string& name);
 
         void init();
+
+        Logger::ptr getRoot() const {return m_root;}
     private:
         std::map<std::string, Logger::ptr> m_loggers;
         Logger::ptr m_root;

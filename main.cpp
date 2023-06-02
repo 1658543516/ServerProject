@@ -2,7 +2,10 @@
 #include "Log.h"
 #include <thread>
 #include "util.h"
+#include "config.h"
 #include <unistd.h>
+
+srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
 
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
@@ -42,5 +45,8 @@ int main() {
 
     auto l = srvpro::LoggerMgr::GetInstance()->getLogger("xxx");
     SRVPRO_LOG_INFO(l) << "xxx";
+
+    SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->getValue();
+    SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->toString();
     return 0;
 }
