@@ -3,7 +3,7 @@ project(ServerProject)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(ServerProject main.cpp src/Log.cpp include/util.h src/util.cpp include/singleton.h include/config.h)
+add_executable(ServerProject main.cpp src/Log.cpp include/util.h src/util.cpp include/singleton.h include/config.h src/config.cpp)
 
 include_directories(include)
 

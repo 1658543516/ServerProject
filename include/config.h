@@ -10,6 +10,7 @@
 #include "Log.h"
 #include "util.h"
 #include <boost/lexical_cast.hpp>
+#include <yaml-cpp/yaml.h>
 
 
 namespace srvpro {
@@ -18,7 +19,9 @@ namespace srvpro {
     public:
         typedef std::shared_ptr<ConfigVarBase> ptr;
         ConfigVarBase(const std::string& name, const std::string& description)
-        :m_name(name), m_description(description) {}
+        :m_name(name), m_description(description) {
+            std::transform(m_name.begin(), m_name.end(), m_name.begin(), ::tolower);
+        }
         virtual ~ConfigVarBase() {}
         const std::string& getName() const {return m_name;}
         const std::string& getDescription() const {return m_description;}
@@ -104,6 +107,10 @@ namespace srvpro {
             }
             return std::dynamic_pointer_cast<ConfigVar<T> >(it->second);
         }
+
+        static void LoadFromYaml(const YAML::Node& root);
+
+        static ConfigVarBase::ptr LookupBase(const std::string& name);
 
     private:
         static ConfigVarMap& GetDatas() {

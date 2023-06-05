@@ -35,6 +35,17 @@ void test_yaml() {
     //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << root;
 }
 
+void test_config() {
+    SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "before: " << g_int_value_config->getValue();
+    //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "before: " << g_int_value_config->toString();
+
+    YAML::Node root = YAML::LoadFile("../conf/log.yml");
+    srvpro::Config::LoadFromYaml(root);
+
+    //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
+    SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
     srvpro::Logger::ptr logger(new srvpro::Logger);
@@ -64,6 +75,7 @@ int main() {
     SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->getValue();
     SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->toString();
 
-    test_yaml();
+    //test_yaml();
+    test_config();
     return 0;
 }
