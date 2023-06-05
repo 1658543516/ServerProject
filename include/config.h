@@ -33,7 +33,48 @@ namespace srvpro {
         std::string m_description;
     };
 
+    //F from_type, T to_type
+    template<class F, class T>
+    class LexicalCast {
+    public:
+        T operator()(const F& v) {
+            return boost::lexical_cast<T>(v);
+        }
+    };
+
     template<class T>
+    class LexicalCast<std::string, std::vector<T> > {
+    public:
+        std::vector<T> operator()(const std::string& v) {
+            YAML::Node node = YAML::Load(v);
+            std::stringstream  ss;
+            typename std::vector<T> vec;
+            for(size_t i = 0; i < node.size(); ++i) {
+                ss.str("");
+                ss << node[i];
+                vec.emplace_back(LexicalCast<std::string, T>()(ss.str()));
+            }
+            return vec;
+        }
+    };
+
+    template<class T>
+    class LexicalCast<std::vector<T>, std::string> {
+    public:
+        std::string operator()(const std::vector<T>& v) {
+            YAML::Node node;
+            for(auto& i : v) {
+                node.push_back(YAML::Load(LexicalCast<T, std::string>()(i)));
+            }
+            std::stringstream ss;
+            ss << node;
+            return ss.str();
+        }
+    };
+
+    //FromStr T operator()(const std::string&)
+    //ToStr std::string operator()(const T&)
+    template<class T, class FromStr = LexicalCast<std::string, T>, class ToStr = LexicalCast<T, std::string> >
     class ConfigVar : public ConfigVarBase {
     public:
         typedef std::shared_ptr<ConfigVar> ptr;
@@ -42,7 +83,8 @@ namespace srvpro {
 
         std::string toString() override {
             try {
-                return boost::lexical_cast<std::string>(m_val);
+                //return boost::lexical_cast<std::string>(m_val);
+                return ToStr()(m_val);
             } catch (std::exception& e) {
                 SRVPRO_LOG_ERROR(SRVPRO_LOG_ROOT()) << "ConfigVar::toString exception "
                                                   << e.what() << " convert: " << typeid(m_val).name() << " to string"
@@ -52,7 +94,8 @@ namespace srvpro {
         }
         bool parseString(const std::string& str) override {
             try {
-                m_val = boost::lexical_cast<T>(str);
+                //m_val = boost::lexical_cast<T>(str);
+                setValue(FromStr()(str));
             } catch (std::exception& e) {
                 SRVPRO_LOG_ERROR(SRVPRO_LOG_ROOT()) << "ConfigVar::fromString exception "
                                                   << e.what() << " convert: string to " << typeid(m_val).name();

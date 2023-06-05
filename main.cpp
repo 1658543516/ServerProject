@@ -4,9 +4,12 @@
 #include "util.h"
 #include "config.h"
 #include <unistd.h>
+#include <vector>
 #include <yaml-cpp/yaml.h>
 
 srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
+
+srvpro::ConfigVar<std::vector<int> >::ptr g_vec_value_config = srvpro::Config::Lookup("system.int_vec", std::vector<int>(1, 2), "system int vec");
 
 void print_yaml(const YAML::Node& node, int level) {
     if (node.IsScalar()) {
@@ -38,12 +41,21 @@ void test_yaml() {
 void test_config() {
     SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "before: " << g_int_value_config->getValue();
     //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "before: " << g_int_value_config->toString();
+    auto v = g_vec_value_config->getValue();
+    for(auto& i : v) {
+        SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "before in_vec: " << i;
+    }
 
     YAML::Node root = YAML::LoadFile("../conf/log.yml");
     srvpro::Config::LoadFromYaml(root);
 
     //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
     SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
+    v = g_vec_value_config->getValue();
+    for(auto& i : v) {
+        SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after in_vec: " << i;
+    }
+
 }
 
 int main() {
