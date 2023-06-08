@@ -31,9 +31,11 @@
 #define SRVPRO_LOG_FMT_FATAL(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::FATAL, fmt, __VA_ARGS__)
 
 #define SRVPRO_LOG_ROOT() srvpro::LoggerMgr::GetInstance()->getRoot()
+#define SRVPRO_LOG_NAME(name) srvpro::LoggerMgr::GetInstance()->getLogger(name)
 
 namespace srvpro{
     class Logger;
+    class LoggerManager;
 
     //日志级别
     class LogLevel{
@@ -48,6 +50,7 @@ namespace srvpro{
         };
 
         static const char* toString(LogLevel::Level level);
+        static LogLevel::Level FromString(const std::string& str);
     };
 
     //日志事件
@@ -115,9 +118,12 @@ namespace srvpro{
         };
 
         void init();
+        
+        bool isError() const {return m_error;}
     private:
         std::string m_pattern;
         std::vector<FormatItem::ptr> m_log_formatter_items;
+        bool m_error = false;
     };
 
     //日志输出地
@@ -140,6 +146,7 @@ namespace srvpro{
 
     //日志器
 class Logger : public std::enable_shared_from_this<Logger>{
+friend class LoggerManager;
     public:
         typedef std::shared_ptr<Logger> ptr;
         explicit Logger(const std::string & name="root");
@@ -152,17 +159,21 @@ class Logger : public std::enable_shared_from_this<Logger>{
 
         void addAppender(LogAppender::ptr appender);
         void delAppender(LogAppender::ptr appender);
+        void clearAppenders();
 
         void setLevel(LogLevel::Level level);
         LogLevel::Level getLevel() const;
 
         const std::string getName() const {return m_name;}
         LogFormatter::ptr getFormatter() const {return m_formatter;}
+        void setFormatter(LogFormatter::ptr val);
+        void setFormatter(const std::string& val);
     private:
         std::string m_name; //日志名称
         LogLevel::Level m_level; //日志级别
         std::vector<LogAppender::ptr> m_appender_list; //Appender集合
         LogFormatter::ptr  m_formatter;
+        Logger::ptr m_root;
     };
 
     //输出到控制台的Appender

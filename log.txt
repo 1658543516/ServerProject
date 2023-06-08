@@ -1,2 +1,1 @@
-2023-06-06 16:48:49	3674	0	[ERROR]	[root]	/home/mrpiao/Desktop/ServerProject/main.cpp:192	test error
-2023-06-06 16:48:49	3674	0	[ERROR]	[root]	/home/mrpiao/Desktop/ServerProject/main.cpp:194	test fmt aa
+2023-06-07 14:12:13	6270	0	[ERROR]	[root]	/home/mrpiao/Desktop/ServerProject/main.cpp:200	test error

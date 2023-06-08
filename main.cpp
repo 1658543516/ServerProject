@@ -43,7 +43,7 @@ void print_yaml(const YAML::Node& node, int level) {
 }
 
 void test_yaml() {
-    YAML::Node root = YAML::LoadFile("../conf/log.yml");
+    YAML::Node root = YAML::LoadFile("../conf/test.yml");
     print_yaml(root, 0);
     //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << root;
 }
@@ -82,7 +82,7 @@ void test_config() {
     XX_M(g_umap_value_config, int_umap, before);
 
 
-    YAML::Node root = YAML::LoadFile("../conf/log.yml");
+    YAML::Node root = YAML::LoadFile("../conf/test.yml");
     srvpro::Config::LoadFromYaml(root);
 
     //SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_int_value_config->getValue();
@@ -109,6 +109,10 @@ class Person {
 			std::stringstream ss;
 			ss << "[Person name=" << m_name << " age=" << m_age << " sex=" << m_sex << "]";
 			return ss.str();
+		}
+
+		bool operator==(const Person& other) const {
+			return m_name == other.m_name && m_age == other.m_age && m_sex == other.m_sex;
 		}
 };
 
@@ -159,10 +163,14 @@ void test_class() {
 		SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << prefix << ": size=" << m.size(); \
 	}
 
+	g_person->addListener(1, [](const Person& old_value, const Person& new_value){
+				SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "old_value = " << old_value.toString() << " new_value = " << new_value.toString();
+			});
+
 	XX_PM(g_person_map, "class.map, before");
 	SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "before: " << g_person_vec_map->toString();
 
-	YAML::Node root = YAML::LoadFile("../conf/log.yml");
+	YAML::Node root = YAML::LoadFile("../conf/test.yml");
    	srvpro::Config::LoadFromYaml(root);
 
 	SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_person->getValue().toString() << " - " << g_person->toString();
