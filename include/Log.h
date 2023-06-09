@@ -115,11 +115,14 @@ namespace srvpro{
             //FormatItem() = default;
             virtual ~FormatItem() {}
             virtual void format(std::ostream& os, std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
+
         };
 
         void init();
         
         bool isError() const {return m_error;}
+
+        const std::string getPattern() const {return m_pattern;}
     private:
         std::string m_pattern;
         std::vector<FormatItem::ptr> m_log_formatter_items;
@@ -133,6 +136,7 @@ namespace srvpro{
         virtual ~LogAppender() = default;
 
         virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
+        virtual std::string toYamlString() = 0;
 
         void setLogFormatter(LogFormatter::ptr formatter);
         LogFormatter::ptr getLogFormatter();
@@ -168,6 +172,8 @@ friend class LoggerManager;
         LogFormatter::ptr getFormatter() const {return m_formatter;}
         void setFormatter(LogFormatter::ptr val);
         void setFormatter(const std::string& val);
+        
+        std::string toYamlString();
     private:
         std::string m_name; //日志名称
         LogLevel::Level m_level; //日志级别
@@ -181,6 +187,7 @@ friend class LoggerManager;
     public:
         typedef std::shared_ptr<StdoutLogAppender> ptr;
         void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event);
+        std::string toYamlString() override;
     private:
 
     };
@@ -191,6 +198,7 @@ friend class LoggerManager;
         typedef std::shared_ptr<FileLogAppender> ptr;
         explicit FileLogAppender(std::string  filename);
         void log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event);
+        std::string toYamlString() override;
         bool reopen(); //如果文件打开，则先关闭再打开
     private:
         std::string m_filename;
@@ -205,6 +213,8 @@ friend class LoggerManager;
         void init();
 
         Logger::ptr getRoot() const {return m_root;}
+        
+        std::string toYamlString();
     private:
         std::map<std::string, Logger::ptr> m_loggers;
         Logger::ptr m_root;

@@ -178,9 +178,22 @@ void test_class() {
 	SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_person_vec_map->toString();
 }
 
+void test_log() {
+	static srvpro::Logger::ptr system_log = SRVPRO_LOG_NAME("system");
+	SRVPRO_LOG_INFO(system_log) << "hello system" << std::endl;
+	std::cout << srvpro::LoggerMgr::GetInstance()->toYamlString() << std::endl; 
+	YAML::Node root = YAML::LoadFile("../conf/log.yml");
+   	srvpro::Config::LoadFromYaml(root);
+   	std::cout << "============================" << std::endl;
+   	std::cout << srvpro::LoggerMgr::GetInstance()->toYamlString() << std::endl; 
+   	std::cout << "============================" << std::endl;
+   	std::cout << root << std::endl; 
+   	SRVPRO_LOG_INFO(system_log) << "hello system" << std::endl;
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
-    srvpro::Logger::ptr logger(new srvpro::Logger);
+    /*srvpro::Logger::ptr logger(new srvpro::Logger);
     logger->addAppender(srvpro::LogAppender::ptr(new srvpro::StdoutLogAppender));
     char* current_path = get_current_dir_name();
     std::cout << current_path << std::endl;
@@ -205,10 +218,11 @@ int main() {
     SRVPRO_LOG_INFO(l) << "xxx";
 
     SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->getValue();
-    SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->toString();
+    SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << g_int_value_config->toString();*/
 
     //test_yaml();
     //test_config();
-    test_class();
+    //test_class();
+    test_log();
     return 0;
 }

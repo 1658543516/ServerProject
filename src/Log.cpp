@@ -144,6 +144,25 @@ namespace srvpro{
     	}
     	m_formatter = new_val;
     }
+    
+    std::string Logger::toYamlString() {
+        YAML::Node node;
+        node["name"] = m_name;
+        if(m_level != LogLevel::UNKNOWN) {
+        	node["level"] = LogLevel::toString(m_level);
+        }
+        
+        if(m_formatter) {
+        	node["formatter"] = m_formatter->getPattern();
+        }
+        
+        for(auto& i : m_appender_list) {
+        	node["appenders"].push_back(YAML::Load(i->toYamlString()));
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
 
     void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
         if (level >= m_level) {
@@ -224,18 +243,23 @@ namespace srvpro{
     }
     
     LogLevel::Level LogLevel::FromString(const std::string& str) {
-    #define XX(name) \
-    	if(str == #name) { \
-    		return LogLevel::name; \
+    #define XX(level, v) \
+    	if(str == #v) { \
+    		return LogLevel::level; \
     	}
-    	XX(DEBUG);
-        XX(INFO);
-        XX(WARN);
-        XX(ERROR);
-        XX(FATAL);
+    	XX(DEBUG, debug);
+        XX(INFO, info);
+        XX(WARN, warn);
+        XX(ERROR, error);
+        XX(FATAL, fatal);
         
-        return LogLevel::UNKNOW;
-    #undef
+        XX(DEBUG, DEBUG);
+        XX(INFO, INFO);
+        XX(WARN, WARN);
+        XX(ERROR, ERROR);
+        XX(FATAL, FATAL);
+        return LogLevel::UNKNOWN;
+    #undef XX
     
     }
 
@@ -272,6 +296,21 @@ namespace srvpro{
             std::cout << m_log_formatter->format(logger, level, event);
         }
     }
+    
+    std::string StdoutLogAppender::toYamlString() {
+        YAML::Node node;
+        node["type"] = "StdoutLogAppender";
+        if(m_level != LogLevel::UNKNOWN) {
+        	node["level"] = LogLevel::toString(m_level);
+        }
+        //node["level"] = LogLevel::toString(m_level);
+        if(m_log_formatter) {
+        	node["formatter"] = m_log_formatter->getPattern();
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
+    }
 
     FileLogAppender::FileLogAppender(std::string filename) : m_filename(std::move(filename)) {
 
@@ -279,7 +318,7 @@ namespace srvpro{
 
     void FileLogAppender::log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) {
         if (level >= m_level) {
-            std::fstream file(m_filename, std::ios::out);
+            std::fstream file(m_filename);
             reopen();
                 //std::cout << true << std::endl;
             std::cout << m_filename << std::endl;
@@ -289,6 +328,22 @@ namespace srvpro{
 
 
         }
+    }
+    
+    std::string FileLogAppender::toYamlString() {
+        YAML::Node node;
+        node["type"] = "FileLogAppender";
+        node["file"] = m_filename;
+        if(m_level != LogLevel::UNKNOWN) {
+        	node["level"] = LogLevel::toString(m_level);
+        }
+        //node["level"] = LogLevel::toString(m_level);
+        if(m_log_formatter) {
+        	node["formatter"] = m_log_formatter->getPattern();
+        }
+        std::stringstream ss;
+        ss << node;
+        return ss.str();
     }
 
     bool FileLogAppender::reopen() {
@@ -465,6 +520,8 @@ namespace srvpro{
         m_root.reset(new Logger);
         m_root->addAppender(LogAppender::ptr(new StdoutLogAppender));
         
+        m_loggers[m_root->m_name] = m_root;
+        
         init();
     }
 
@@ -482,7 +539,7 @@ namespace srvpro{
     
     struct LogAppenderDefine {
     	int type = 0; // 1 is File, 2 is StdOut
-    	LogLevel::Level level = LogLevel::UNKNOW;
+    	LogLevel::Level level = LogLevel::UNKNOWN;
     	std::string formatter;
     	std::string file;
     	
@@ -494,7 +551,7 @@ namespace srvpro{
     
     struct LogDefine {
     	std::string name;
-    	LogLevel::Level level = LogLevel::UNKNOW;
+    	LogLevel::Level level = LogLevel::UNKNOWN;
     	std::string formatter;
     	std::vector<LogAppenderDefine> appenders;
     	
@@ -539,13 +596,13 @@ namespace srvpro{
                 		LogAppenderDefine lad;
                 		if(type == "FileLogAppender") {
                 			lad.type = 1;
-                			if(!n["file"].IsDefined()) {
+                			if(!a["file"].IsDefined()) {
                 				std::cout << "log config error: fileappender file is null, " << n << std::endl;
                 				continue;
                 			}
-                			lad.file = n["file"].as<std::string>();
-                			if(n["formatter"].IsDefined()) {
-                				lad.formatter = n["formatter"].as<std::string>();
+                			lad.file = a["file"].as<std::string>();
+                			if(a["formatter"].IsDefined()) {
+                				lad.formatter = a["formatter"].as<std::string>();
                 			}
                 		}
                 		else if(type == "StdoutLogAppender") {
@@ -571,43 +628,76 @@ namespace srvpro{
         std::string operator()(const std::set<LogDefine>& v) {
             YAML::Node node;
             for(auto& i : v) {
-                node.push_back(YAML::Load(LexicalCast<T, std::string>()(i)));
+                YAML::Node n;
+                n["name"] = i.name;
+                if(i.level != LogLevel::UNKNOWN) {
+                	n["level"] = LogLevel::toString(i.level);
+                }
+                
+                if(i.formatter.empty()) {
+		    	n["formatter"] = i.formatter;
+		}
+		    
+		for(auto& a : i.appenders) {
+		    YAML::Node na;
+		    if(a.type == 1) {
+		   	na["type"] = "FileLogAppender";
+		    	na["file"] = a.file;
+		    }
+		    else if(a.type == 2) {
+		    	na["type"] = "StdoutLogAppender";
+		    }
+		    
+		    if(a.level != LogLevel::UNKNOWN) {
+		    	na["level"] = LogLevel::toString(a.level);
+		    }
+		    	
+		    if(!a.formatter.empty()) {
+		    	na["formatter"] = a.formatter;
+		    }
+		    	
+		    n["appenders"].push_back(na);
+		}
+		
+		node.push_back(n);
             }
+            
             std::stringstream ss;
             ss << node;
             return ss.str();
         }
     };
     
-    srvpro::ConfiVar<std::set<LogDefine> > g_log_defines = srvpro::Config::Lookup("logs", std::set<LogDefine>(), "logs config");
+    srvpro::ConfigVar<std::set<LogDefine> >::ptr g_log_defines = srvpro::Config::Lookup("logs", std::set<LogDefine>(), "logs config");
     
     struct LogIniter {
     	LogIniter() {
     		g_log_defines->addListener(0xF1E231, [](const std::set<LogDefine>& old_value, const std::set<LogDefine>& new_value){
-    			SRVPRO_LOG_NAME(SRVPRO_LOG_ROOT()) << "on_logger_conf_changed";
+    			SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "on_logger_conf_changed";
     			//insert
 	    		for(auto& i : new_value) {
 	    			auto it = old_value.find(i);
 	    			srvpro::Logger::ptr logger;
 	    			if(it == old_value.end()) {
 	    				//insert new logger
-	    				logger.reset(new srvpro::Logger(i.name));
+	    				/*logger.reset(new srvpro::Logger(i.name));
 	    				logger->setLevel(i.level);
-	    				if(!i.foramtter.empty()) {
+	    				if(!i.formatter.empty()) {
 	    					logger->setFormatter(i.formatter);
 	    				}
 	    				logger->clearAppenders();
 	    				for(auto& a : i.appenders) {
 	    					srvpro::LogAppender::ptr ap;
 	    					if(a.type == 1) {
-	    						ap.reset(new FileLogAppender(i.file));
+	    						ap.reset(new FileLogAppender(a.file));
 	    					}
 	    					else if(a.type == 2) {
 	    						ap.reset(new StdoutLogAppender);
 	    					}
 	    					ap->setLevel(a.level);
 	    					logger->addAppender(ap);
-	    				} 
+	    				} */
+	    				logger = SRVPRO_LOG_NAME(i.name);
 	    			}
 	    			else {
 	    				if(!(i == *it)) {
@@ -617,14 +707,14 @@ namespace srvpro{
 	    			}
 	    			
 	    			logger->setLevel(i.level);
-	    			if(!i.foramtter.empty()) {
+	    			if(!i.formatter.empty()) {
 	    				logger->setFormatter(i.formatter);
 	    			}
 	    			logger->clearAppenders();
 	    			for(auto& a : i.appenders) {
 	    				srvpro::LogAppender::ptr ap;
 	    				if(a.type == 1) {
-	    					ap.reset(new FileLogAppender(i.file));
+	    					ap.reset(new FileLogAppender(a.file));
 	    				}
 	    				else if(a.type == 2) {
 	    					ap.reset(new StdoutLogAppender);
@@ -642,17 +732,27 @@ namespace srvpro{
 	    				logger->setLevel((LogLevel::Level)100);
 	    				logger->clearAppenders();
 	    			}
-	    			else {
+	    			/*else {
 	    				if(!(i == *it) {
 	    				//update old logger
 	    				}
-	    			}
+	    			}*/
 	    		}
     		});
     	}
     };
     
     static LogIniter __log_init;
+    
+    std::string LoggerManager::toYamlString() {
+    	YAML::Node node;
+    	for(auto& i : m_loggers) {
+    		node.push_back(YAML::Load(i.second->toYamlString()));
+    	}
+    	std::stringstream ss;
+    	ss << node;
+    	return ss.str();
+    }
     
     void LoggerManager::init() {
     	
