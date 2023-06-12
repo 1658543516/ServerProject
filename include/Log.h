@@ -106,6 +106,7 @@ namespace srvpro{
         typedef std::shared_ptr<LogFormatter> ptr;
         LogFormatter(const std::string& pattern);
         std::string format(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event);
+        //void setFormatter(LogFormatter::ptr val);
 
     public:
         class FormatItem{
@@ -131,6 +132,7 @@ namespace srvpro{
 
     //日志输出地
     class LogAppender{
+    friend class Logger;
     public:
         typedef std::shared_ptr<LogAppender> ptr;
         virtual ~LogAppender() = default;
@@ -145,6 +147,7 @@ namespace srvpro{
         void setLevel(LogLevel::Level level) {m_level = level;}
     protected:
         LogLevel::Level m_level = LogLevel::DEBUG;
+        bool m_hasFormatter = false;
         LogFormatter::ptr m_log_formatter;
     };
 
