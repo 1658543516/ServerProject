@@ -341,6 +341,7 @@ namespace srvpro {
     }
 
     void FileLogAppender::log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) {
+        std::cout << m_log_formatter->getPattern() << std::endl;
         if (level >= m_level) {
             std::fstream file(m_filename);
             reopen();
@@ -411,9 +412,9 @@ namespace srvpro {
     std::string LogFormatter::format(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) {
         std::stringstream ss;
 
-        //std::cout << m_log_formatter_items[0] << std::endl;
+        std::cout << m_pattern << std::endl;
 
-        for (auto &i: logger->getFormatter()->m_log_formatter_items) {
+        for (auto &i: m_log_formatter_items) {
             i->format(ss, logger, level, event);
         }
         return ss.str();

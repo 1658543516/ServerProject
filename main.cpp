@@ -7,7 +7,7 @@
 #include <vector>
 #include <yaml-cpp/yaml.h>
 
-srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
+/*srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
 
 srvpro::ConfigVar<std::vector<int> >::ptr g_vec_value_config = srvpro::Config::Lookup("system.int_vec", std::vector<int>(1, 2), "system int vec");
 
@@ -176,7 +176,7 @@ void test_class() {
 	SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_person->getValue().toString() << " - " << g_person->toString();
         XX_PM(g_person_map, "class.map, after");    
 	SRVPRO_LOG_INFO(SRVPRO_LOG_ROOT()) << "after: " << g_person_vec_map->toString();
-}
+}*/
 
 void test_log() {
 	static srvpro::Logger::ptr system_log = SRVPRO_LOG_NAME("system");
@@ -190,8 +190,8 @@ void test_log() {
    	std::cout << root << std::endl; 
    	SRVPRO_LOG_INFO(system_log) << "hello system" << std::endl;
    	
-   	system_log->setFormatter("%d - %m%n");
-   	SRVPRO_LOG_INFO(system_log) << "hello system" << std::endl;
+   	//system_log->setFormatter("%d - %m%n");
+   	//SRVPRO_LOG_INFO(system_log) << "hello system" << std::endl;
 }
 
 int main() {
