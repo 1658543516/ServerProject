@@ -1,8 +1,6 @@
 #include <iostream>
-#include "Log.h"
+#include "srvpro.h"
 #include <thread>
-#include "util.h"
-#include "config.h"
 #include <unistd.h>
 #include <vector>
 #include <yaml-cpp/yaml.h>
@@ -194,6 +192,23 @@ void test_log() {
    	//SRVPRO_LOG_INFO(system_log) << "hello system" << std::endl;
 }
 
+int count = 0;
+srvpro::RWMutex s_mutex;
+
+srvpro::Logger::ptr g_logger = SRVPRO_LOG_ROOT();
+
+void fun1() {
+    SRVPRO_LOG_INFO(g_logger) << "name: " << srvpro::Thread::GetName() 
+                              << " this.name: " << srvpro::Thread::GetThis()->GetName()
+                              << " id:" << srvpro::GetThreadID()
+                              << " this.id:" << srvpro::Thread::GetThis()->getId();
+                              
+    for(int i = 0; i < 100000; ++i) {
+        srvpro::RWMutex::WriteLock lock1(s_mutex);
+    	++count;
+    }
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
     /*srvpro::Logger::ptr logger(new srvpro::Logger);
@@ -226,6 +241,21 @@ int main() {
     //test_yaml();
     //test_config();
     //test_class();
-    test_log();
+    //test_log();
+    
+    SRVPRO_LOG_INFO(g_logger) << "thread test begin";
+    
+    std::vector<srvpro::Thread::ptr> thrs;
+    for(int i = 0; i < 5; ++i) {
+        srvpro::Thread::ptr thr(new srvpro::Thread(&fun1, "name_" + std::to_string(i)));
+        thrs.push_back(thr);
+    }
+    
+    for(int i = 0; i < 5; ++i) {
+        thrs[i]->join();
+    }
+    
+    SRVPRO_LOG_INFO(g_logger) << "thread test end";
+    SRVPRO_LOG_INFO(g_logger) << "count = " << count;
     return 0;
 }
