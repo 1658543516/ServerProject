@@ -11,6 +11,7 @@
 #include <fstream>
 #include <map>
 #include "singleton.h"
+#include "thread.h"
 
 #define SRVPRO_LOG_LEVEL(logger, level) \
         if(logger->getLevel() <= level) \
@@ -135,6 +136,7 @@ namespace srvpro{
     friend class Logger;
     public:
         typedef std::shared_ptr<LogAppender> ptr;
+        typedef Spinlock MutexType;
         virtual ~LogAppender() = default;
 
         virtual void log(std::shared_ptr<Logger> logger, LogLevel::Level level, LogEvent::ptr event) = 0;
@@ -147,6 +149,7 @@ namespace srvpro{
         void setLevel(LogLevel::Level level) {m_level = level;}
     protected:
         LogLevel::Level m_level = LogLevel::DEBUG;
+        MutexType m_mutex;
         bool m_hasFormatter = false;
         LogFormatter::ptr m_log_formatter;
     };
@@ -156,6 +159,7 @@ class Logger : public std::enable_shared_from_this<Logger>{
 friend class LoggerManager;
     public:
         typedef std::shared_ptr<Logger> ptr;
+        typedef Spinlock MutexType;
         explicit Logger(const std::string & name="root");
         void log(LogLevel::Level level, LogEvent::ptr event);
         void debug(LogEvent::ptr event);
@@ -172,7 +176,7 @@ friend class LoggerManager;
         LogLevel::Level getLevel() const;
 
         const std::string getName() const {return m_name;}
-        LogFormatter::ptr getFormatter() const {return m_formatter;}
+        LogFormatter::ptr getFormatter();
         void setFormatter(LogFormatter::ptr val);
         void setFormatter(const std::string& val);
         
@@ -180,6 +184,7 @@ friend class LoggerManager;
     private:
         std::string m_name; //日志名称
         LogLevel::Level m_level; //日志级别
+        MutexType m_mutex;
         std::vector<LogAppender::ptr> m_appender_list; //Appender集合
         LogFormatter::ptr  m_formatter;
         Logger::ptr m_root;
@@ -206,10 +211,12 @@ friend class LoggerManager;
     private:
         std::string m_filename;
         std::ofstream m_filestream;
+        uint64_t m_lastTime = 0;
     };
 
     class LoggerManager{
     public:
+    	typedef Spinlock MutexType;
         LoggerManager();
         Logger::ptr getLogger(const std::string& name);
 
@@ -219,6 +226,7 @@ friend class LoggerManager;
         
         std::string toYamlString();
     private:
+    	MutexType m_mutex;
         std::map<std::string, Logger::ptr> m_loggers;
         Logger::ptr m_root;
     };

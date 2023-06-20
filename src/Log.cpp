@@ -147,9 +147,11 @@ namespace srvpro {
     }
 
     void Logger::setFormatter(LogFormatter::ptr val) {
+     	MutexType::Lock lock(m_mutex);
         m_formatter = val;
         
         for(auto& i : m_appender_list) {
+            MutexType::Lock ll(i->m_mutex);
             if(!i->m_hasFormatter) {
             	i->m_log_formatter = m_formatter;
             }
@@ -167,7 +169,13 @@ namespace srvpro {
         setFormatter(new_val);
     }
 
+    LogFormatter::ptr Logger::getFormatter() {
+        MutexType::Lock lock(m_mutex);
+        return m_formatter;
+    }
+
     std::string Logger::toYamlString() {
+    	MutexType::Lock lock(m_mutex);
         YAML::Node node;
         node["name"] = m_name;
         if (m_level != LogLevel::UNKNOWN) {
@@ -189,6 +197,7 @@ namespace srvpro {
     void Logger::log(LogLevel::Level level, LogEvent::ptr event) {
         if (level >= m_level) {
             auto self = shared_from_this();
+            MutexType::Lock lock(m_mutex);
             if (!m_appender_list.empty()) {
                 for (auto &it: m_appender_list) {
                     it->log(self, level, event);
@@ -220,13 +229,16 @@ namespace srvpro {
     }
 
     void Logger::addAppender(LogAppender::ptr appender) {
+    	MutexType::Lock lock(m_mutex);
         if (!appender->getLogFormatter()) {
+            MutexType::Lock ll(appender->m_mutex);
             appender->m_log_formatter = m_formatter;
         }
         m_appender_list.emplace_back(appender);
     }
 
     void Logger::delAppender(LogAppender::ptr appender) {
+    	MutexType::Lock lock(m_mutex);
         for (auto it = m_appender_list.begin(); it != m_appender_list.end(); ++it) {
             if (*it == appender) {
                 m_appender_list.erase(it);
@@ -236,6 +248,7 @@ namespace srvpro {
     }
 
     void Logger::clearAppenders() {
+    	MutexType::Lock lock(m_mutex);
         m_appender_list.clear();
     }
 
@@ -317,11 +330,13 @@ namespace srvpro {
 
     void StdoutLogAppender::log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) {
         if (level >= m_level) {
+            MutexType::Lock lock(m_mutex);
             std::cout << m_log_formatter->format(logger, level, event);
         }
     }
 
     std::string StdoutLogAppender::toYamlString() {
+    	MutexType::Lock lock(m_mutex);
         YAML::Node node;
         node["type"] = "StdoutLogAppender";
         if (m_level != LogLevel::UNKNOWN) {
@@ -337,25 +352,24 @@ namespace srvpro {
     }
 
     FileLogAppender::FileLogAppender(std::string filename) : m_filename(std::move(filename)) {
-
+        reopen();
     }
 
     void FileLogAppender::log(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) {
-        std::cout << m_log_formatter->getPattern() << std::endl;
+        //std::cout << m_log_formatter->getPattern() << std::endl;
         if (level >= m_level) {
-            std::fstream file(m_filename);
-            reopen();
-            //std::cout << true << std::endl;
-            std::cout << m_filename << std::endl;
+            uint64_t now = time(0);
+            if(now != m_lastTime) {
+            	reopen();
+            	m_lastTime = now;
+            }
+            MutexType::Lock lock(m_mutex);
             m_filestream << m_log_formatter->format(logger, level, event);
-            //m_filestream.close();
-
-
-
         }
     }
 
     std::string FileLogAppender::toYamlString() {
+    	MutexType::Lock lock(m_mutex);
         YAML::Node node;
         node["type"] = "FileLogAppender";
         node["file"] = m_filename;
@@ -372,6 +386,7 @@ namespace srvpro {
     }
 
     bool FileLogAppender::reopen() {
+    	MutexType::Lock lock(m_mutex);
         if (m_filestream) {
             m_filestream.close();
         }
@@ -389,6 +404,7 @@ namespace srvpro {
     }
 
     void LogAppender::setLogFormatter(LogFormatter::ptr formatter) {
+        MutexType::Lock lock(m_mutex);
         m_log_formatter = formatter;
         if (m_log_formatter) {
             m_hasFormatter = true;
@@ -398,6 +414,7 @@ namespace srvpro {
     }
 
     LogFormatter::ptr LogAppender::getLogFormatter() {
+    	MutexType::Lock lock(m_mutex);
         return m_log_formatter;
     }
 
@@ -559,6 +576,7 @@ namespace srvpro {
     }
 
     Logger::ptr LoggerManager::getLogger(const std::string &name) {
+    	MutexType::Lock lock(m_mutex);
         auto it = m_loggers.find(name);
         if (it != m_loggers.end()) {
             return it->second;
@@ -788,6 +806,7 @@ namespace srvpro {
     static LogIniter __log_init;
 
     std::string LoggerManager::toYamlString() {
+    	MutexType::Lock lock(m_mutex);
         YAML::Node node;
         for (auto &i: m_loggers) {
             node.push_back(YAML::Load(i.second->toYamlString()));
