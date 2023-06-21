@@ -18,6 +18,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <functional>
+#include "thread.h"
 
 namespace srvpro {
 
@@ -244,12 +245,14 @@ namespace srvpro {
     public:
         typedef std::shared_ptr<ConfigVar> ptr;
         typedef std::function<void(const T &old_value, const T &new_value)> on_change_cb;
+        typedef RWMutex RWMutexType;
 
         ConfigVar(const std::string &name, const T &default_value, const std::string &description)
                 : ConfigVarBase(name, description), m_val(default_value) {}
 
         std::string toString() override {
             try {
+            	RWMutexType::ReadLock lock(m_mutex);
                 //return boost::lexical_cast<std::string>(m_val);
                 return ToStr()(m_val);
             } catch (std::exception &e) {
@@ -271,49 +274,66 @@ namespace srvpro {
             return false;
         }
 
-        const T getValue() const { return m_val; }
+        const T getValue() {
+             RWMutexType::ReadLock lock(m_mutex);
+             return m_val; 
+        }
 
         void setValue(const T &val) {
-            if (val == m_val) {
-                return;
+            {
+            	RWMutexType::ReadLock lock(m_mutex);
+            	if (val == m_val) {
+                    return;
+            	}
+                for (auto &i: m_cbs) {
+                    i.second(m_val, val);
+                }
             }
-            for (auto &i: m_cbs) {
-                i.second(m_val, val);
-            }
+            RWMutexType::WriteLock lock(m_mutex);
             m_val = val;
         }
 
         std::string getTypeName() const override { return typeid(T).name(); }
 
-        void addListener(uint64_t key, on_change_cb cb) {
-            m_cbs[key] = cb;
+        uint64_t addListener(on_change_cb cb) {
+            static uint64_t s_fun_id = 0;
+            RWMutexType::WriteLock lock(m_mutex);
+            ++s_fun_id;
+            m_cbs[s_fun_id] = cb;
+            return s_fun_id;
         }
 
         void delListener(uint64_t key) {
+            RWMutexType::WriteLock lock(m_mutex);
             m_cbs.erase(key);
         }
 
         on_change_cb getListener(uint64_t key) {
+            RWMutexType::ReadLock lock(m_mutex);
             auto it = m_cbs.find(key);
             return it == m_cbs.end() ? nullptr : it->second;
         }
 
         void clearListener() {
+            RWMutexType::WriteLock lock(m_mutex);
             m_cbs.clear();
         }
 
     private:
         T m_val;
+        RWMutexType m_mutex;
         std::map<uint64_t, on_change_cb> m_cbs;
     };
 
     class Config {
     public:
         typedef std::unordered_map<std::string, ConfigVarBase::ptr> ConfigVarMap;
+        typedef RWMutex RWMutexType;
 
         template<class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name,
                                                  const T &default_value, const std::string &description = "") {
+            RWMutexType::WriteLock lock(GetMutex());
             auto it = GetDatas().find(name);
             if (it != GetDatas().end()) {
                 auto tmp = std::dynamic_pointer_cast<ConfigVar<T> >(it->second);
@@ -341,6 +361,7 @@ namespace srvpro {
 
         template<class T>
         static typename ConfigVar<T>::ptr Lookup(const std::string &name) {
+            RWMutexType::ReadLock lock(GetMutex());
             auto it = GetDatas().find(name);
             if (it == GetDatas().end()) {
                 return nullptr;
@@ -351,6 +372,8 @@ namespace srvpro {
         static void LoadFromYaml(const YAML::Node &root);
 
         static ConfigVarBase::ptr LookupBase(const std::string &name);
+        
+        static void Visit(std::function<void(ConfigVarBase::ptr)> cb);
 
     private:
         static ConfigVarMap &GetDatas() {
@@ -358,6 +381,10 @@ namespace srvpro {
             return s_datas;
         }
 
+	static RWMutexType& GetMutex() {
+	    static RWMutexType s_mutex;
+	    return s_mutex;
+	}
     };
 
 }

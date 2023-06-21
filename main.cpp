@@ -273,5 +273,9 @@ int main() {
     
     SRVPRO_LOG_INFO(g_logger) << "thread test end";
     SRVPRO_LOG_INFO(g_logger) << "count = " << count;
+
+    srvpro::Config::Visit([](srvpro::ConfigVarBase::ptr var){
+        SRVPRO_LOG_INFO(g_logger) << "name=" << var->getName() << " description=" << var->getDescription() << " type=" << var->getTypeName() << " value=" << var->toString();
+    });
     return 0;
 }
