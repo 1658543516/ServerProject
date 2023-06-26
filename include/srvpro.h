@@ -10,5 +10,6 @@
 #include "util.h"
 #include "thread.h"
 #include "singleton.h"
+#include "macro.h"
 
 #endif //SERVERPROJECT_SRVPRO_H

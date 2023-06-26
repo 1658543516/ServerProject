@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <vector>
 #include <yaml-cpp/yaml.h>
+#include "assert.h"
 
 /*srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
 
@@ -221,6 +222,12 @@ void fun3() {
     }
 }
 
+void test_assert() {
+    srvpro::Logger::ptr g_logger = SRVPRO_LOG_ROOT();
+    SRVPRO_LOG_INFO(g_logger) << srvpro::BacktraceToString(10);
+    SRVPRO_ASSERT(0 == 1, "abcdef xx");
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
     /*srvpro::Logger::ptr logger(new srvpro::Logger);
@@ -255,7 +262,7 @@ int main() {
     //test_class();
     //test_log();
     
-    SRVPRO_LOG_INFO(g_logger) << "thread test begin";
+    /*SRVPRO_LOG_INFO(g_logger) << "thread test begin";
     YAML::Node root = YAML::LoadFile("../conf/log2.yml");
     srvpro::Config::LoadFromYaml(root);
     
@@ -276,6 +283,8 @@ int main() {
 
     srvpro::Config::Visit([](srvpro::ConfigVarBase::ptr var){
         SRVPRO_LOG_INFO(g_logger) << "name=" << var->getName() << " description=" << var->getDescription() << " type=" << var->getTypeName() << " value=" << var->toString();
-    });
+    });*/
+    
+    test_assert();
     return 0;
 }

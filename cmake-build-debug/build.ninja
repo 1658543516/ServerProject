@@ -84,6 +84,13 @@ build CMakeFiles/ServerProject.dir/src/thread.cpp.o: CXX_COMPILER__ServerProject
   OBJECT_DIR = CMakeFiles/ServerProject.dir
   OBJECT_FILE_DIR = CMakeFiles/ServerProject.dir/src
 
+build CMakeFiles/ServerProject.dir/src/fiber.cpp.o: CXX_COMPILER__ServerProject_Debug /home/mrpiao/Desktop/ServerProject/src/fiber.cpp || cmake_object_order_depends_target_ServerProject
+  DEP_FILE = CMakeFiles/ServerProject.dir/src/fiber.cpp.o.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu++11
+  INCLUDES = -I/home/mrpiao/Desktop/ServerProject/include
+  OBJECT_DIR = CMakeFiles/ServerProject.dir
+  OBJECT_FILE_DIR = CMakeFiles/ServerProject.dir/src
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target ServerProject
@@ -92,7 +99,7 @@ build CMakeFiles/ServerProject.dir/src/thread.cpp.o: CXX_COMPILER__ServerProject
 #############################################
 # Link the executable ServerProject
 
-build ServerProject: CXX_EXECUTABLE_LINKER__ServerProject_Debug CMakeFiles/ServerProject.dir/main.cpp.o CMakeFiles/ServerProject.dir/src/Log.cpp.o CMakeFiles/ServerProject.dir/src/util.cpp.o CMakeFiles/ServerProject.dir/src/config.cpp.o CMakeFiles/ServerProject.dir/src/thread.cpp.o | /usr/local/lib/libyaml-cpp.so
+build ServerProject: CXX_EXECUTABLE_LINKER__ServerProject_Debug CMakeFiles/ServerProject.dir/main.cpp.o CMakeFiles/ServerProject.dir/src/Log.cpp.o CMakeFiles/ServerProject.dir/src/util.cpp.o CMakeFiles/ServerProject.dir/src/config.cpp.o CMakeFiles/ServerProject.dir/src/thread.cpp.o CMakeFiles/ServerProject.dir/src/fiber.cpp.o | /usr/local/lib/libyaml-cpp.so
   FLAGS = -g
   LINK_LIBRARIES = -Wl,-rpath,/usr/local/lib  /usr/local/lib/libyaml-cpp.so
   OBJECT_DIR = CMakeFiles/ServerProject.dir
@@ -106,7 +113,7 @@ build ServerProject: CXX_EXECUTABLE_LINKER__ServerProject_Debug CMakeFiles/Serve
 # Utility command for edit_cache
 
 build CMakeFiles/edit_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/mrpiao/Desktop/ServerProject/cmake-build-debug && /snap/clion/237/bin/cmake/linux/x64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  COMMAND = cd /home/mrpiao/Desktop/ServerProject/cmake-build-debug && /snap/clion/241/bin/cmake/linux/x64/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
   DESC = No interactive CMake dialog available...
   restat = 1
 
@@ -117,7 +124,7 @@ build edit_cache: phony CMakeFiles/edit_cache.util
 # Utility command for rebuild_cache
 
 build CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
-  COMMAND = cd /home/mrpiao/Desktop/ServerProject/cmake-build-debug && /snap/clion/237/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/mrpiao/Desktop/ServerProject -B/home/mrpiao/Desktop/ServerProject/cmake-build-debug
+  COMMAND = cd /home/mrpiao/Desktop/ServerProject/cmake-build-debug && /snap/clion/241/bin/cmake/linux/x64/bin/cmake --regenerate-during-build -S/home/mrpiao/Desktop/ServerProject -B/home/mrpiao/Desktop/ServerProject/cmake-build-debug
   DESC = Running CMake to regenerate build system...
   pool = console
   restat = 1
@@ -144,14 +151,14 @@ build all: phony ServerProject
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/mrpiao/Desktop/ServerProject/CMakeLists.txt /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCXXInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeGenericSystem.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeInitializeConfigs.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeLanguageInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-C.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-CXX.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-C.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.25.2/CMakeCCompiler.cmake CMakeFiles/3.25.2/CMakeCXXCompiler.cmake CMakeFiles/3.25.2/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/mrpiao/Desktop/ServerProject/CMakeLists.txt /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCXXInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeGenericSystem.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeInitializeConfigs.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeLanguageInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-C.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-CXX.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-C.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.25.2/CMakeCCompiler.cmake CMakeFiles/3.25.2/CMakeCXXCompiler.cmake CMakeFiles/3.25.2/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/mrpiao/Desktop/ServerProject/CMakeLists.txt /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCXXInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeGenericSystem.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeInitializeConfigs.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeLanguageInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-C.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-CXX.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-C.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux.cmake /snap/clion/237/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.25.2/CMakeCCompiler.cmake CMakeFiles/3.25.2/CMakeCXXCompiler.cmake CMakeFiles/3.25.2/CMakeSystem.cmake: phony
+build /home/mrpiao/Desktop/ServerProject/CMakeLists.txt /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCXXInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeGenericSystem.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeInitializeConfigs.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeLanguageInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-C.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU-CXX.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Compiler/GNU.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-C.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux-GNU.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/Linux.cmake /snap/clion/241/bin/cmake/linux/x64/share/cmake-3.25/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.25.2/CMakeCCompiler.cmake CMakeFiles/3.25.2/CMakeCXXCompiler.cmake CMakeFiles/3.25.2/CMakeSystem.cmake: phony
 
 
 #############################################
