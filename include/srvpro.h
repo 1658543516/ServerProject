@@ -7,6 +7,7 @@
 
 #include "Log.h"
 #include "config.h"
+#include "fiber.h"
 #include "util.h"
 #include "thread.h"
 #include "singleton.h"

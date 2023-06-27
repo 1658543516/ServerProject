@@ -7,6 +7,7 @@
 #include <execinfo.h>
 #include "util.h"
 #include "Log.h"
+#include "fiber.h"
 
 namespace srvpro {
 
@@ -17,7 +18,7 @@ namespace srvpro {
     }
 
     uint32_t GetFiberID() {
-        return 0;
+        return srvpro::Fiber::GetFiberId();
     }
     
     void Backtrace(std::vector<std::string>& bt, int size, int skip) {

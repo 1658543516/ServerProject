@@ -20,7 +20,8 @@ namespace srvpro {
     	    HOLD,
     	    EXEC,
     	    TERM,
-    	    READY
+    	    READY,
+    	    EXCEPT
     	};
     private:
     	Fiber();
@@ -32,14 +33,18 @@ namespace srvpro {
     	void reset(std::function<void()> cb);
     	void swapIn();
     	void swapOut();
+    	
+    	uint64_t getId() const { return m_id; }
     public:
     	static void SetThis(Fiber* f);
     	static Fiber::ptr GetThis();
     	static void YieldToReady();
     	static void YieldToHold();
-    	static uint64_t TotalFibers;
+    	static uint64_t TotalFibers();
     	
-    	static MainFunc();
+    	static void MainFunc();
+    	
+    	static uint64_t GetFiberId();
     private:
     	uint64_t m_id = 0;
     	uint32_t m_stacksize = 0;

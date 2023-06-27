@@ -1,5 +1,6 @@
 #include <iostream>
 #include "srvpro.h"
+#include <memory>
 #include <thread>
 #include <unistd.h>
 #include <vector>
@@ -225,7 +226,29 @@ void fun3() {
 void test_assert() {
     srvpro::Logger::ptr g_logger = SRVPRO_LOG_ROOT();
     SRVPRO_LOG_INFO(g_logger) << srvpro::BacktraceToString(10);
-    SRVPRO_ASSERT(0 == 1, "abcdef xx");
+    SRVPRO_ASSERT2(0 == 1, "abcdef xx");
+}
+
+void run_in_fiber() {
+    SRVPRO_LOG_INFO(g_logger) << "run in fiber begin";
+    srvpro::Fiber::YieldToHold();
+    SRVPRO_LOG_INFO(g_logger) << "run in fiber end";
+    srvpro::Fiber::YieldToHold();
+}
+
+void test_fiber() {
+    SRVPRO_LOG_INFO(g_logger) << "main begin -1";
+    {
+    	srvpro::Fiber::GetThis();
+    	SRVPRO_LOG_INFO(g_logger) << "main begin";
+    	srvpro::Fiber::ptr fiber(new srvpro::Fiber(run_in_fiber));
+    	fiber->swapIn();
+    	SRVPRO_LOG_INFO(g_logger) << "main after swapIn";
+    	fiber->swapIn();
+    	SRVPRO_LOG_INFO(g_logger) << "main after end";
+    	fiber->swapIn();
+    }
+    SRVPRO_LOG_INFO(g_logger) << "main after end2";
 }
 
 int main() {
@@ -285,6 +308,19 @@ int main() {
         SRVPRO_LOG_INFO(g_logger) << "name=" << var->getName() << " description=" << var->getDescription() << " type=" << var->getTypeName() << " value=" << var->toString();
     });*/
     
-    test_assert();
+    //test_assert();
+    //srvpro::Thread::SetName("main");
+    //test_fiber();
+    std::vector<srvpro::Thread::ptr> thrs;
+    for(int i = 0; i < 3; ++i) {
+        //thr->SetName("name" + std::to_string(i));
+        //srvpro::Thread::SetName("main");
+    	thrs.push_back(srvpro::Thread::ptr(new srvpro::Thread(&test_fiber, "name_" + std::to_string(i))));
+        std::cout << srvpro::Thread::GetName() << std::endl;
+    }
+    
+    for(auto i : thrs) {
+    	i->join();
+    }
     return 0;
 }

@@ -67,6 +67,15 @@ namespace srvpro {
             os << event->getFiberID();
         }
     };
+    
+    class ThreadNameFormatItem : public LogFormatter::FormatItem {
+    public:
+        ThreadNameFormatItem(const std::string &str = "") {}
+
+        void format(std::ostream &os, Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) override {
+            os << event->getThreadName();
+        }
+    };
 
     class DateTimeFormatItem : public LogFormatter::FormatItem {
     public:
@@ -143,7 +152,7 @@ namespace srvpro {
 
     Logger::Logger(const std::string &name) : m_name(name), m_level(LogLevel::DEBUG) {
         //%d [%p] %f %l %m %n
-        m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
+        m_formatter.reset(new LogFormatter("%d{%Y-%m-%d %H:%M:%S}%T%t%T%N%T%F%T[%p]%T[%c]%T%f:%l%T%m%n"));
     }
 
     void Logger::setFormatter(LogFormatter::ptr val) {
@@ -308,6 +317,12 @@ namespace srvpro {
         m_event->getLogger()->log(m_event->getLevel(), m_event);
     }
 
+    LogEvent::LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, char *file, int32_t line, uint32_t elapse,
+                       uint32_t threadID, uint32_t fiberID, uint64_t time, const std::string &thread_name)
+                       :m_logger(logger), m_level(level),m_file(file), m_line(line), m_elapse(elapse), m_threadID(threadID), m_fiberID(fiberID), m_time(time), m_threadName(thread_name){
+
+    }
+
     void LogEvent::format(const char *fmt, ...) {
         va_list al;
         va_start(al, fmt);
@@ -429,7 +444,7 @@ namespace srvpro {
     std::string LogFormatter::format(Logger::ptr logger, LogLevel::Level level, LogEvent::ptr event) {
         std::stringstream ss;
 
-        std::cout << m_pattern << std::endl;
+       // std::cout << m_pattern << std::endl;
 
         for (auto &i: m_log_formatter_items) {
             i->format(ss, logger, level, event);
@@ -544,7 +559,8 @@ namespace srvpro {
                 XX(f, FilenameFormatItem),
                 XX(l, LineFormatItem),
                 XX(T, TabFormatItem),
-                XX(F, FiberIDFormatItem)
+                XX(F, FiberIDFormatItem),
+                XX(N, ThreadNameFormatItem)
 #undef XX
         };
 

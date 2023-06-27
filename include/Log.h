@@ -15,7 +15,7 @@
 
 #define SRVPRO_LOG_LEVEL(logger, level) \
         if(logger->getLevel() <= level) \
-            srvpro::LogEventWrap(srvpro::LogEvent::ptr(new srvpro::LogEvent(logger, level, __FILE__, __LINE__, 0, srvpro::GetThreadID(), srvpro::GetFiberID(), time(0)))).getSS()
+            srvpro::LogEventWrap(srvpro::LogEvent::ptr(new srvpro::LogEvent(logger, level, __FILE__, __LINE__, 0, srvpro::GetThreadID(), srvpro::GetFiberID(), time(0), srvpro::Thread::GetName()))).getSS()
 #define SRVPRO_LOG_DEBUG(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::DEBUG)
 #define SRVPRO_LOG_INFO(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::INFO)
 #define SRVPRO_LOG_WARN(logger) SRVPRO_LOG_LEVEL(logger, srvpro::LogLevel::WARN)
@@ -24,7 +24,7 @@
 
 #define SRVPRO_LOG_FMT_LEVEL(logger, level, fmt, ...) \
         if (logger->getLevel() <= level)              \
-            srvpro::LogEventWrap(srvpro::LogEvent::ptr(new srvpro::LogEvent(logger, level, __FILE__, __LINE__, 0, srvpro::GetThreadID(), srvpro::GetFiberID(), time(0)))).getEvent()->format(fmt, __VA_ARGS__)
+            srvpro::LogEventWrap(srvpro::LogEvent::ptr(new srvpro::LogEvent(logger, level, __FILE__, __LINE__, 0, srvpro::GetThreadID(), srvpro::GetFiberID(), time(0), srvpro::Thread::GetName()))).getEvent()->format(fmt, __VA_ARGS__)
 #define SRVPRO_LOG_FMT_DEBUG(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::DEBUG, fmt, __VA_ARGS__)
 #define SRVPRO_LOG_FMT_INFO(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::INFO, fmt, __VA_ARGS__)
 #define SRVPRO_LOG_FMT_WARN(logger, fmt, ...) SRVPRO_LOG_FMT_LEVEL(logger, srvpro::LogLevel::WARN, fmt, __VA_ARGS__)
@@ -58,8 +58,7 @@ namespace srvpro{
     class LogEvent{
     public:
         typedef std::shared_ptr<LogEvent> ptr;
-        LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, char* file, int32_t line, uint32_t elapse, uint32_t threadID, uint32_t fiberID, uint64_t time)
-        :m_logger(logger), m_level(level),m_file(file), m_line(line), m_elapse(elapse), m_threadID(threadID), m_fiberID(fiberID), m_time(time) {}
+        LogEvent(std::shared_ptr<Logger> logger, LogLevel::Level level, char* file, int32_t line, uint32_t elapse, uint32_t threadID, uint32_t fiberID, uint64_t time, const std::string& thread_name);
 
         const char* getFile() const {return m_file;}
         int32_t getLine() const {return m_line;}
@@ -67,6 +66,7 @@ namespace srvpro{
         uint32_t getThreadID() const {return m_threadID;}
         uint32_t getFiberID() const {return m_fiberID;}
         uint64_t getTime() const {return m_time;}
+        const std::string& getThreadName() const {return m_threadName;}
         const std::string getContent() const {return m_ss.str();}
         std::stringstream& getSS() { return m_ss;}
         std::shared_ptr<Logger> getLogger() const {return m_logger;}
@@ -82,6 +82,7 @@ namespace srvpro{
         uint32_t m_threadID = 0; //线程id
         uint32_t m_fiberID = 0; //协程id
         uint64_t m_time = 0; //时间戳
+        std::string m_threadName;
         std::string m_content;
         std::stringstream m_ss;
 
