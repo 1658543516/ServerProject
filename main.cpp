@@ -309,14 +309,14 @@ int main() {
     });*/
     
     //test_assert();
-    //srvpro::Thread::SetName("main");
+    srvpro::Thread::SetName("main");
     //test_fiber();
     std::vector<srvpro::Thread::ptr> thrs;
     for(int i = 0; i < 3; ++i) {
         //thr->SetName("name" + std::to_string(i));
         //srvpro::Thread::SetName("main");
     	thrs.push_back(srvpro::Thread::ptr(new srvpro::Thread(&test_fiber, "name_" + std::to_string(i))));
-        std::cout << srvpro::Thread::GetName() << std::endl;
+        //std::cout << srvpro::Thread::GetName() << std::endl;
     }
     
     for(auto i : thrs) {
