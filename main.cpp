@@ -309,7 +309,7 @@ int main() {
     });*/
     
     //test_assert();
-    srvpro::Thread::SetName("main");
+    /*srvpro::Thread::SetName("main");
     //test_fiber();
     std::vector<srvpro::Thread::ptr> thrs;
     for(int i = 0; i < 3; ++i) {
@@ -321,6 +321,10 @@ int main() {
     
     for(auto i : thrs) {
     	i->join();
-    }
+    }*/
+    
+    srvpro::Scheduler sc;
+    sc.start();
+    sc.stop();
     return 0;
 }

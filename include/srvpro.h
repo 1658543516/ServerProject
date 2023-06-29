@@ -11,6 +11,7 @@
 #include "util.h"
 #include "mutex.h"
 #include "thread.h"
+#include "scheduler.h"
 #include "singleton.h"
 #include "macro.h"
 

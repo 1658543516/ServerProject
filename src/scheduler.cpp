@@ -14,7 +14,7 @@ namespace srvpro {
     static thread_local Scheduler* t_scheduler = nullptr;
     static thread_local Fiber* t_fiber = nullptr;
     
-    Scheduler::Scheduler(size_t threads = 1, bool use_caller = true, const std::string& name = "")
+    Scheduler::Scheduler(size_t threads, bool use_caller, const std::string& name)
     	:m_name(name) {
     	SRVPRO_ASSERT1(threads > 0);
     	
@@ -65,11 +65,17 @@ namespace srvpro {
     	    m_threads[i].reset(new Thread(std::bind(&Scheduler::run, this), m_name + "_" + std::to_string(i)));
     	    m_threadIds.push_back(m_threads[i]->getId());
     	}
+        lock.unlock();
+
+        if(m_rootFiber) {
+            m_rootFiber->call();
+            SRVPRO_LOG_INFO(g_logger) << "call out";
+        }
     }
     
     void Scheduler::stop() {
     	m_autoStop = true;
-    	if(m_rootFiber && m_threadCount == 0 && (m_rootFiber->getState == Fiber::TERM || m_rootFiber->getState == Fiber::INIT)) {
+    	if(m_rootFiber && m_threadCount == 0 && (m_rootFiber->getState() == Fiber::TERM || m_rootFiber->getState() == Fiber::INIT)) {
     	    SRVPRO_LOG_INFO(g_logger) << this << " stopped";
     	    m_stopping = true;
     	    
@@ -78,7 +84,7 @@ namespace srvpro {
     	    }
     	}
     	
-    	bool exit_on_this_fiber = false;
+    	//bool exit_on_this_fiber = false;
     	if(m_rootThread != -1) {
     	    SRVPRO_ASSERT1(GetThis() == this);
     	} else {
@@ -100,12 +106,109 @@ namespace srvpro {
     }
     
     void Scheduler::run() {
+        SRVPRO_LOG_INFO(g_logger) << "run";
     	setThis();
     	if(srvpro::GetThreadID() != m_rootThread) {
     	    t_fiber = Fiber::GetThis().get();
     	}
     	
-    	Fiber::ptr idle_fiber(new Fiber());
+    	Fiber::ptr idle_fiber(new Fiber(std::bind(&Scheduler::idle, this)));
+    	Fiber::ptr cb_fiber;
+    	
+    	FiberAndThread ft;
+    	while(true) {
+    	    ft.reset();
+    	    bool tickle_me = false;
+    	    {
+    	    	MutexType::Lock lock(m_mutex);
+    	    	auto it = m_fibers.begin();
+    	    	while(it != m_fibers.end()) {
+    	    	    if(it->thread != -1 && it->thread != srvpro::GetThreadID()) {
+    	    	    	++it;
+    	    	    	tickle_me = true;
+    	    	    	continue;
+    	    	    }
+    	    	    
+    	    	    SRVPRO_ASSERT1(it->fiber || it->cb);
+    	    	    
+    	    	    if(it->fiber && it->fiber->getState() == Fiber::EXEC) {
+    	    	    	++it;
+    	    	    	continue;
+    	    	    }
+    	    	    
+    	    	    ft = *it;
+    	    	    m_fibers.erase(it);
+    	    	}
+    	    }
+    	    
+    	    if(tickle_me) {
+    	        tickle();
+    	    }
+    	    
+    	    if(ft.fiber && (ft.fiber->getState() != Fiber::TERM || ft.fiber->getState() != Fiber::EXCEPT)) {
+    	    	++m_activeThreadCount;
+    	    	ft.fiber->swapIn();
+    	    	--m_activeThreadCount;
+    	    	
+    	    	if(ft.fiber->getState() == Fiber::READY) {
+    	    	    schedule(ft.fiber);
+    	    	} else if(ft.fiber->getState() != Fiber::TERM && ft.fiber->getState() != Fiber::EXCEPT) {
+    	    	    ft.fiber->m_state = Fiber::HOLD;
+    	    	}
+    	    	ft.reset();
+    	    } else if(ft.cb) {
+    	    	if(cb_fiber) {
+    	    	    cb_fiber->reset(ft.cb);
+    	    	} else {
+    	    	    cb_fiber.reset(new Fiber(ft.cb));
+    	    	    ft.cb = nullptr;
+    	    	}
+    	    	ft.reset();
+    	    	
+    	    	++m_activeThreadCount;
+    	    	cb_fiber->swapIn();
+    	    	--m_activeThreadCount;
+    	    	
+    	    	if(cb_fiber->getState() == Fiber::READY) {
+    	    	    schedule(cb_fiber);
+    	    	    cb_fiber.reset();
+    	    	} else if(cb_fiber->getState() == Fiber::EXCEPT || cb_fiber->getState() == Fiber::TERM) {
+    	    	    cb_fiber->reset(nullptr);
+    	    	} else {//if(cb_fiber->getState() != Fiber::TERM) {
+    	    	    cb_fiber->m_state = Fiber::HOLD;
+    	    	    cb_fiber.reset();
+    	    	}
+    	    	
+    	    } else {
+    	    	if(idle_fiber->getState() == Fiber::TERM) {
+    	    	    SRVPRO_LOG_INFO(g_logger) << "idle fiber term";
+    	    	    break;
+    	    	}
+    	    	
+    	    	++m_idleThreadCount;
+    	    	idle_fiber->swapIn();
+    	    	--m_idleThreadCount;
+    	    	if(idle_fiber->getState() != Fiber::TERM || idle_fiber->getState() != Fiber::EXCEPT) {
+    	    	    idle_fiber->m_state = Fiber::HOLD;
+    	    	}
+    	    	
+    	    }
+    	    
+    	}
     }
+    
+    void Scheduler::tickle() {
+        SRVPRO_LOG_INFO(g_logger) << "tickle";
+    }
+    
+    bool Scheduler::stopping() {
+        MutexType::Lock lock(m_mutex);
+        return m_autoStop && m_stopping && m_fibers.empty() && m_activeThreadCount == 0;
+    }
+    
+    void Scheduler::idle() {
+        SRVPRO_LOG_INFO(g_logger) << "idle";
+    }
+
 
 }

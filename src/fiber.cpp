@@ -5,6 +5,8 @@
 #include "Log.h"
 #include "config.h"
 #include "macro.h"
+#include "scheduler.h"
+#include "util.h"
 #include <atomic>
 
 namespace srvpro {
@@ -103,19 +105,27 @@ namespace srvpro {
     	makecontext(&m_ctx, &Fiber::MainFunc, 0);
     	m_state = INIT;
     }
+
+    void Fiber::call() {
+        SetThis(this);
+        m_state = EXEC;
+        if (swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
+            SRVPRO_ASSERT2(false, "swapcontext");
+        }
+    }
     
     void Fiber::swapIn() {
     	SetThis(this);
     	SRVPRO_ASSERT1(m_state != EXEC);
     	m_state = EXEC;
-    	if(swapcontext(&t_threadFiber->m_ctx, &m_ctx)) {
+    	if(swapcontext(&Scheduler::GetMainFiber()->m_ctx, &m_ctx)) {
     	    SRVPRO_ASSERT2(false, "swapcontext");
     	}
     }
     void Fiber::swapOut() {
-    	SetThis(t_threadFiber.get());
+    	SetThis(Scheduler::GetMainFiber());
     	
-    	if(swapcontext(&m_ctx, &t_threadFiber->m_ctx)) {
+    	if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
     	    SRVPRO_ASSERT2(false, "swapcontext");
     	}
     }
@@ -159,10 +169,10 @@ namespace srvpro {
     	    cur->m_state = TERM;
     	} catch(std::exception& ex) {
     	    cur->m_state = EXCEPT;
-    	    SRVPRO_LOG_ERROR(g_logger) << "Fiber except: " << ex.what();
+    	    SRVPRO_LOG_ERROR(g_logger) << "Fiber except: " << ex.what() << " fiber_id=" << cur->getId() << std::endl << srvpro::BacktraceToString();
     	} catch(...) {
     	    cur->m_state = EXCEPT;
-    	    SRVPRO_LOG_ERROR(g_logger) << "Fiber except: ";
+    	    SRVPRO_LOG_ERROR(g_logger) << "Fiber except: " << " fiber_id=" << cur->getId() << std::endl << srvpro::BacktraceToString();
     	}
     	
     	auto raw_ptr = cur.get();

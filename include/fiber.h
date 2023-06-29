@@ -11,7 +11,9 @@
 
 namespace srvpro {
 
+    class Scheduler;
     class Fiber : public std::enable_shared_from_this<Fiber> {
+    friend class Scheduler;
     public:
     	typedef std::shared_ptr<Fiber> ptr;
     	
@@ -31,10 +33,12 @@ namespace srvpro {
     	~Fiber();
     	
     	void reset(std::function<void()> cb);
+        void call();
     	void swapIn();
     	void swapOut();
     	
     	uint64_t getId() const { return m_id; }
+    	State getState() const { return m_state; }
     public:
     	static void SetThis(Fiber* f);
     	static Fiber::ptr GetThis();
