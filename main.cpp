@@ -251,6 +251,12 @@ void test_fiber() {
     SRVPRO_LOG_INFO(g_logger) << "main after end2";
 }
 
+void test_fiber_scheduler() {
+    SRVPRO_LOG_INFO(g_logger) << "test in fiber";
+    sleep(1);
+    srvpro::Scheduler::GetThis()->schedule(&test_fiber);
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
     /*srvpro::Logger::ptr logger(new srvpro::Logger);
@@ -322,9 +328,11 @@ int main() {
     for(auto i : thrs) {
     	i->join();
     }*/
-    
-    srvpro::Scheduler sc;
+    SRVPRO_LOG_INFO(g_logger) << "begin";
+    srvpro::Scheduler sc(2, true, "test");
     sc.start();
+    sc.schedule(&test_fiber_scheduler);
     sc.stop();
+    SRVPRO_LOG_INFO(g_logger) << "over";
     return 0;
 }

@@ -55,7 +55,7 @@ namespace srvpro {
         SRVPRO_LOG_DEBUG(g_logger) << "Fiber::Fiber";
     }
     	
-    Fiber::Fiber(std::function<void()> cb, size_t stacksize):m_id(++s_fiber_id), m_cb(cb) {
+    Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool use_caller):m_id(++s_fiber_id), m_cb(cb) {
     	++s_fiber_count;
     	m_stacksize = stacksize ? stacksize : g_fiber_stack_size->getValue();
     	
@@ -67,7 +67,11 @@ namespace srvpro {
     	m_ctx.uc_stack.ss_sp = m_stack;
     	m_ctx.uc_stack.ss_size = m_stacksize;
     	
-    	makecontext(&m_ctx, &Fiber::MainFunc, 0);
+    	if(!use_caller) {
+    	    makecontext(&m_ctx, &Fiber::MainFunc, 0);
+    	} else {
+    	    makecontext(&m_ctx, &Fiber::CallerMainFunc, 0);
+    	}
 
         SRVPRO_LOG_DEBUG(g_logger) << "Fiber::Fiber id=" << m_id;
     }
@@ -113,6 +117,13 @@ namespace srvpro {
             SRVPRO_ASSERT2(false, "swapcontext");
         }
     }
+
+    void Fiber::back() {
+        SetThis(t_threadFiber.get());
+        if(swapcontext(&m_ctx, &t_threadFiber->m_ctx)) {
+            SRVPRO_ASSERT2(false, "swapcontext");
+        }
+    }
     
     void Fiber::swapIn() {
     	SetThis(this);
@@ -123,11 +134,11 @@ namespace srvpro {
     	}
     }
     void Fiber::swapOut() {
-    	SetThis(Scheduler::GetMainFiber());
-    	
-    	if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
-    	    SRVPRO_ASSERT2(false, "swapcontext");
-    	}
+        SetThis(Scheduler::GetMainFiber());
+        if(swapcontext(&m_ctx, &Scheduler::GetMainFiber()->m_ctx)) {
+            SRVPRO_ASSERT2(false, "swapcontext");
+        }
+
     }
 
     void Fiber::SetThis(Fiber* f) {
@@ -182,5 +193,26 @@ namespace srvpro {
     	SRVPRO_ASSERT2(false, "never reach");
     }
     
+    void Fiber::CallerMainFunc() {
+    	Fiber::ptr cur = GetThis();
+    	SRVPRO_ASSERT1(cur);
+    	try {
+    	    cur->m_cb();
+    	    cur->m_cb = nullptr;
+    	    cur->m_state = TERM;
+    	} catch(std::exception& ex) {
+    	    cur->m_state = EXCEPT;
+    	    SRVPRO_LOG_ERROR(g_logger) << "Fiber except: " << ex.what() << " fiber_id=" << cur->getId() << std::endl << srvpro::BacktraceToString();
+    	} catch(...) {
+    	    cur->m_state = EXCEPT;
+    	    SRVPRO_LOG_ERROR(g_logger) << "Fiber except: " << " fiber_id=" << cur->getId() << std::endl << srvpro::BacktraceToString();
+    	}
+    	
+    	auto raw_ptr = cur.get();
+    	cur.reset();
+    	raw_ptr->back();
+    	
+    	SRVPRO_ASSERT2(false, "never reach");
+    }
 
 }

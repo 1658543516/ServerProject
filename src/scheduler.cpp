@@ -25,7 +25,7 @@ namespace srvpro {
     	    SRVPRO_ASSERT1(GetThis() == nullptr);
     	    t_scheduler = this;
     	    
-    	    m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this)));
+    	    m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, true));
     	    srvpro::Thread::SetName(m_name);
     	    
     	    t_fiber = m_rootFiber.get();
@@ -99,6 +99,34 @@ namespace srvpro {
     	if(m_rootFiber) {
     	    tickle();
     	}
+
+        if(m_rootFiber) {
+            /*while(!stopping()) {
+                if (m_rootFiber->getState() == Fiber::TERM || m_rootFiber->getState() == Fiber::EXCEPT) {
+                    m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, true));
+                    SRVPRO_LOG_INFO(g_logger) << " root fiber is term, reset";
+                    t_fiber = m_rootFiber.get();
+                }
+                m_rootFiber->call();
+            }*/
+            if (!stopping()) {
+                m_rootFiber->call();
+            }
+        }
+
+        std::vector<Thread::ptr> thrs;
+        {
+            MutexType::Lock lock(m_mutex);
+            thrs.swap(m_threads);
+        }
+
+        for (auto& i : thrs) {
+            i->join();
+        }
+
+        /*if(stopping()) {
+            return;
+        }*/
     }
     
     void Scheduler::setThis() {
@@ -107,6 +135,7 @@ namespace srvpro {
     
     void Scheduler::run() {
         SRVPRO_LOG_INFO(g_logger) << "run";
+        //return;
     	setThis();
     	if(srvpro::GetThreadID() != m_rootThread) {
     	    t_fiber = Fiber::GetThis().get();
@@ -119,6 +148,8 @@ namespace srvpro {
     	while(true) {
     	    ft.reset();
     	    bool tickle_me = false;
+            bool is_active = false;
+
     	    {
     	    	MutexType::Lock lock(m_mutex);
     	    	auto it = m_fibers.begin();
@@ -138,6 +169,9 @@ namespace srvpro {
     	    	    
     	    	    ft = *it;
     	    	    m_fibers.erase(it);
+                    ++m_activeThreadCount;
+                    is_active = true;
+                    break;
     	    	}
     	    }
     	    
@@ -145,7 +179,7 @@ namespace srvpro {
     	        tickle();
     	    }
     	    
-    	    if(ft.fiber && (ft.fiber->getState() != Fiber::TERM || ft.fiber->getState() != Fiber::EXCEPT)) {
+    	    if(ft.fiber && (ft.fiber->getState() != Fiber::TERM && ft.fiber->getState() != Fiber::EXCEPT)) {
     	    	++m_activeThreadCount;
     	    	ft.fiber->swapIn();
     	    	--m_activeThreadCount;
@@ -161,11 +195,11 @@ namespace srvpro {
     	    	    cb_fiber->reset(ft.cb);
     	    	} else {
     	    	    cb_fiber.reset(new Fiber(ft.cb));
-    	    	    ft.cb = nullptr;
+    	    	    //ft.cb = nullptr;
     	    	}
     	    	ft.reset();
     	    	
-    	    	++m_activeThreadCount;
+    	    	//++m_activeThreadCount;
     	    	cb_fiber->swapIn();
     	    	--m_activeThreadCount;
     	    	
@@ -180,15 +214,21 @@ namespace srvpro {
     	    	}
     	    	
     	    } else {
+                if(is_active) {
+                    --m_activeThreadCount;
+                    continue;
+                }
     	    	if(idle_fiber->getState() == Fiber::TERM) {
     	    	    SRVPRO_LOG_INFO(g_logger) << "idle fiber term";
+                    //idle_fiber.reset();
     	    	    break;
+                    //continue;
     	    	}
     	    	
     	    	++m_idleThreadCount;
     	    	idle_fiber->swapIn();
     	    	--m_idleThreadCount;
-    	    	if(idle_fiber->getState() != Fiber::TERM || idle_fiber->getState() != Fiber::EXCEPT) {
+    	    	if(idle_fiber->getState() != Fiber::TERM && idle_fiber->getState() != Fiber::EXCEPT) {
     	    	    idle_fiber->m_state = Fiber::HOLD;
     	    	}
     	    	
