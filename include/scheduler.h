@@ -49,6 +49,7 @@ namespace srvpro {
     	    	    MutexType::Lock lock(m_mutex);
     	    	    while(begin != end) {
     	    	    	need_tickle = scheduleNoLock(&*begin) || need_tickle;
+                        ++begin;
     	    	    }
     	    	    
     	    	}

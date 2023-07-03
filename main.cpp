@@ -252,9 +252,13 @@ void test_fiber() {
 }
 
 void test_fiber_scheduler() {
-    SRVPRO_LOG_INFO(g_logger) << "test in fiber";
+    static int s_count = 5;
+    SRVPRO_LOG_INFO(g_logger) << "test in fiber s_count=" << s_count;
+
     sleep(1);
-    srvpro::Scheduler::GetThis()->schedule(&test_fiber);
+    if(--s_count >= 0) {
+        srvpro::Scheduler::GetThis()->schedule(&test_fiber_scheduler, srvpro::GetThreadID());
+    }
 }
 
 int main() {
@@ -328,8 +332,8 @@ int main() {
     for(auto i : thrs) {
     	i->join();
     }*/
-    SRVPRO_LOG_INFO(g_logger) << "begin";
-    srvpro::Scheduler sc(2, true, "test");
+    SRVPRO_LOG_INFO(g_logger) << "main";
+    srvpro::Scheduler sc(3, false, "test");
     sc.start();
     sc.schedule(&test_fiber_scheduler);
     sc.stop();

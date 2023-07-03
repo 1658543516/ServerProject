@@ -67,10 +67,10 @@ namespace srvpro {
     	}
         lock.unlock();
 
-        if(m_rootFiber) {
+        /*if(m_rootFiber) {
             m_rootFiber->call();
             SRVPRO_LOG_INFO(g_logger) << "call out";
-        }
+        }*/
     }
     
     void Scheduler::stop() {
@@ -134,7 +134,7 @@ namespace srvpro {
     }
     
     void Scheduler::run() {
-        SRVPRO_LOG_INFO(g_logger) << "run";
+        SRVPRO_LOG_INFO(g_logger) << " run";
         //return;
     	setThis();
     	if(srvpro::GetThreadID() != m_rootThread) {
@@ -168,11 +168,12 @@ namespace srvpro {
     	    	    }
     	    	    
     	    	    ft = *it;
-    	    	    m_fibers.erase(it);
+    	    	    m_fibers.erase(it++);
                     ++m_activeThreadCount;
                     is_active = true;
                     break;
     	    	}
+                tickle_me |= it != m_fibers.end();
     	    }
     	    
     	    if(tickle_me) {
@@ -180,7 +181,7 @@ namespace srvpro {
     	    }
     	    
     	    if(ft.fiber && (ft.fiber->getState() != Fiber::TERM && ft.fiber->getState() != Fiber::EXCEPT)) {
-    	    	++m_activeThreadCount;
+    	    	//++m_activeThreadCount;
     	    	ft.fiber->swapIn();
     	    	--m_activeThreadCount;
     	    	
@@ -248,6 +249,9 @@ namespace srvpro {
     
     void Scheduler::idle() {
         SRVPRO_LOG_INFO(g_logger) << "idle";
+        while(!stopping()) {
+            srvpro::Fiber::YieldToHold();
+    	}
     }
 
 
