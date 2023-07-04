@@ -134,7 +134,7 @@ namespace srvpro {
     }
     
     void Scheduler::run() {
-        SRVPRO_LOG_INFO(g_logger) << " run";
+        SRVPRO_LOG_INFO(g_logger) << "run";
         //return;
     	setThis();
     	if(srvpro::GetThreadID() != m_rootThread) {
@@ -173,7 +173,6 @@ namespace srvpro {
                     is_active = true;
                     break;
     	    	}
-                tickle_me |= it != m_fibers.end();
     	    }
     	    
     	    if(tickle_me) {

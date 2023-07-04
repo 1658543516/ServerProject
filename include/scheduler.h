@@ -5,10 +5,12 @@
 #ifndef SERVERPROJECT_SCHEDULER_H
 #define SERVERPROJECT_SCHEDULER_H
 #include <memory>
+#include <iostream>
 #include "thread.h"
 #include "mutex.h"
 #include "fiber.h"
 #include <list>
+#include <vector>
 
 namespace srvpro {
 
@@ -65,6 +67,8 @@ namespace srvpro {
     	    virtual void idle();
     	    
     	    void setThis();
+    	    
+    	    bool hasIdleThreads() { return m_idleThreadCount > 0; }
     	private:
     	    template<class FiberOrCb>
     	    bool scheduleNoLock(FiberOrCb fc, int thread) {

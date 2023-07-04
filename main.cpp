@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <vector>
 #include <yaml-cpp/yaml.h>
+#include "iomanager.h"
 #include "assert.h"
 
 /*srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
@@ -261,6 +262,15 @@ void test_fiber_scheduler() {
     }
 }
 
+void test_iomanager_fiber() {
+    SRVPRO_LOG_INFO(g_logger) << "test_fiber";
+}
+
+void test_iomanager1() {
+    srvpro::IOManager iom;
+    iom.schedule(&test_iomanager_fiber);
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
     /*srvpro::Logger::ptr logger(new srvpro::Logger);
@@ -332,11 +342,16 @@ int main() {
     for(auto i : thrs) {
     	i->join();
     }*/
-    SRVPRO_LOG_INFO(g_logger) << "main";
+
+    //test scheduler
+    /*SRVPRO_LOG_INFO(g_logger) << "main";
     srvpro::Scheduler sc(3, false, "test");
     sc.start();
     sc.schedule(&test_fiber_scheduler);
     sc.stop();
-    SRVPRO_LOG_INFO(g_logger) << "over";
+    SRVPRO_LOG_INFO(g_logger) << "over";*/
+
+    //test iomanager
+    test_iomanager1();
     return 0;
 }
