@@ -221,6 +221,7 @@ namespace srvpro {
     	    	if(idle_fiber->getState() == Fiber::TERM) {
     	    	    SRVPRO_LOG_INFO(g_logger) << "idle fiber term";
                     //idle_fiber.reset();
+                    //tickle();
     	    	    break;
                     //continue;
     	    	}

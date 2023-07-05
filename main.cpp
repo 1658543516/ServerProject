@@ -7,6 +7,11 @@
 #include <yaml-cpp/yaml.h>
 #include "iomanager.h"
 #include "assert.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+
+#include <fcntl.h>
 
 /*srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
 
@@ -262,13 +267,44 @@ void test_fiber_scheduler() {
     }
 }
 
+int sock = 0;
+
 void test_iomanager_fiber() {
-    SRVPRO_LOG_INFO(g_logger) << "test_fiber";
+    SRVPRO_LOG_INFO(g_logger) << "test_fiber sock=" << sock;
+    
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    fcntl(sock, F_SETFL, O_NONBLOCK);
+
+    sockaddr_in addr;
+    memset(&addr, 0 ,sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(80);
+    inet_pton(AF_INET, "36.152.44.96", &addr.sin_addr.s_addr);
+
+    if(!connect(sock, (const sockaddr*)&addr, sizeof(addr))) {
+
+    } else if(errno = EINPROGRESS) {
+        SRVPRO_LOG_INFO(g_logger) << "add event errno=" << errno << " " << strerror(errno);
+        srvpro::IOManager::GetThis()->addEvent(sock, srvpro::IOManager::READ, [](){
+            SRVPRO_LOG_INFO(g_logger) << "read callback";
+        });
+        srvpro::IOManager::GetThis()->addEvent(sock, srvpro::IOManager::WRITE, [](){
+            SRVPRO_LOG_INFO(g_logger) << "write callback";
+            srvpro::IOManager::GetThis()->cancelEvent(sock, srvpro::IOManager::READ);
+            close(sock);
+        });
+    } else {
+        SRVPRO_LOG_INFO(g_logger) << "else" << errno << " " << strerror(errno);
+    }
+
 }
 
 void test_iomanager1() {
-    srvpro::IOManager iom;
+    srvpro::IOManager iom(2, false);
     iom.schedule(&test_iomanager_fiber);
+
+    
+
 }
 
 int main() {
