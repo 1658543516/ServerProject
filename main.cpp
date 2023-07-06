@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 
 #include <fcntl.h>
+#include "hook.h"
 
 /*srvpro::ConfigVar<int>::ptr g_int_value_config = srvpro::Config::Lookup("system.port", (int)8080, "system port");
 
@@ -323,6 +324,21 @@ void test_timer() {
     }, true);
 }
 
+void test_sleep() {
+    srvpro::IOManager iom(1);
+    iom.schedule([](){
+        sleep(2);
+        SRVPRO_LOG_INFO(g_logger) << "sleep 2";
+    });
+
+    iom.schedule([](){
+        sleep(3);
+        SRVPRO_LOG_INFO(g_logger) << "sleep 3";
+    });
+
+    SRVPRO_LOG_INFO(g_logger) << "test sleep";
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
     /*srvpro::Logger::ptr logger(new srvpro::Logger);
@@ -407,6 +423,9 @@ int main() {
     //test_iomanager1();
 
     //test timer
-    test_timer();
+    //test_timer();
+
+    //test sleep hook
+    test_sleep();
     return 0;
 }

@@ -6,6 +6,7 @@
 #include "scheduler.h"
 #include "macro.h"
 #include "util.h"
+#include "hook.h"
 
 namespace srvpro {
 
@@ -136,6 +137,7 @@ namespace srvpro {
     void Scheduler::run() {
         SRVPRO_LOG_INFO(g_logger) << "run";
         //return;
+        set_hook_enable(true);
     	setThis();
     	if(srvpro::GetThreadID() != m_rootThread) {
     	    t_fiber = Fiber::GetThis().get();
