@@ -267,17 +267,17 @@ namespace srvpro {
         SRVPRO_ASSERT1(rt == 1);
     }
 
-/*bool IOManager::stopping(uint64_t& timeout) {
-    timeout = getNextTimer();
-    return timeout == ~0ull
-        && m_pendingEventCount == 0
-        && Scheduler::stopping();
+    bool IOManager::stopping(uint64_t& timeout) {
+        timeout = getNextTimer();
+        return timeout == ~0ull
+            && m_pendingEventCount == 0
+            && Scheduler::stopping();
 
-}*/
+    }
 
     bool IOManager::stopping() {
-        //uint64_t timeout = 0;
-        return Scheduler::stopping() && m_pendingEventCount == 0;
+        uint64_t timeout = 0;
+        return stopping(timeout);
     }
 
     void IOManager::idle() {
@@ -290,7 +290,7 @@ namespace srvpro {
 
         while (true) {
             uint64_t next_timeout = 0;
-            if (stopping()) {
+            if (stopping(next_timeout)) {
                 SRVPRO_LOG_INFO(g_logger) << "name=" << getName()
                                           << " idle stopping exit";
                 break;
@@ -312,13 +312,13 @@ namespace srvpro {
                 }
             } while (true);
 
-            //std::vector<std::function<void()> > cbs;
-            //listExpiredCb(cbs);
-            //if(!cbs.empty()) {
-            //SYLAR_LOG_DEBUG(g_logger) << "on timer cbs.size=" << cbs.size();
-            //    schedule(cbs.begin(), cbs.end());
-            //    cbs.clear();
-            //}
+            std::vector<std::function<void()> > cbs;
+            listExpiredCb(cbs);
+            if(!cbs.empty()) {
+            SRVPRO_LOG_DEBUG(g_logger) << "on timer cbs.size=" << cbs.size();
+                schedule(cbs.begin(), cbs.end());
+                cbs.clear();
+            }
 
             //if(rt == MAX_EVNETS) {
             //    SYLAR_LOG_INFO(g_logger) << "epoll wait events=" << rt;
@@ -380,6 +380,10 @@ namespace srvpro {
 
             raw_ptr->swapOut();
         }
+    }
+    
+    void IOManager::onTimerInsertedAtFront() {
+        tickle();
     }
 
 }

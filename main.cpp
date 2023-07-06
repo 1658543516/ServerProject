@@ -302,9 +302,25 @@ void test_iomanager_fiber() {
 void test_iomanager1() {
     srvpro::IOManager iom(2, false);
     iom.schedule(&test_iomanager_fiber);
-
-    
-
+}
+srvpro::Timer::ptr s_timer;
+void test_timer() {
+    srvpro::IOManager iom(2);
+    /*srvpro::Timer::ptr timer = iom.addTimer(1000, [&timer](){
+        SRVPRO_LOG_INFO(g_logger) << "hello timer";
+        static int i = 0;
+        if (++i == 3) {
+            timer->cancel();
+        }
+    }, true);*/
+    s_timer = iom.addTimer(1000, [](){
+        SRVPRO_LOG_INFO(g_logger) << "hello timer";
+        static int i = 0;
+        if (++i == 3) {
+            //s_timer->cancel();
+            s_timer->reset(2000, true);
+        }
+    }, true);
 }
 
 int main() {
@@ -388,6 +404,9 @@ int main() {
     SRVPRO_LOG_INFO(g_logger) << "over";*/
 
     //test iomanager
-    test_iomanager1();
+    //test_iomanager1();
+
+    //test timer
+    test_timer();
     return 0;
 }
