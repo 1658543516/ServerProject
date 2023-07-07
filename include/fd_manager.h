@@ -8,6 +8,7 @@
 #include <memory>
 #include "thread.h"
 #include "iomanager.h"
+#include "singleton.h"
 
 namespace srvpro {
 
@@ -81,6 +82,9 @@ namespace srvpro {
         /// 文件句柄集合
         std::vector<FdCtx::ptr> m_datas;
     };
+    
+    /// 文件句柄单例
+    typedef Singleton<FdManager> FdMgr;
 
 }
 
