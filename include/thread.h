@@ -10,10 +10,11 @@
 #include <semaphore.h>
 #include <atomic>
 #include "mutex.h"
+//#include "noncopyable.h"
 
 namespace srvpro {
 
-class Thread {
+class Thread : Noncopyable {
 
 public:
     typedef std::shared_ptr<Thread> ptr;
