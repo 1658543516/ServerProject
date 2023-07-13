@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "address.h"
 
 #include <fcntl.h>
 #include "hook.h"
@@ -379,6 +380,41 @@ void test_sock() {
     SRVPRO_LOG_INFO(g_logger) << buff;
 }
 
+void test_address() {
+    std::vector<srvpro::Address::ptr> addrs;
+    bool v = srvpro::Address::Lookup(addrs, "www.baidu.com:ftp");
+    if(!v) {
+        SRVPRO_LOG_ERROR(g_logger) << "lookup fail";
+        return;
+    }
+
+    for(size_t i = 0; i < addrs.size(); ++i) {
+        SRVPRO_LOG_INFO(g_logger) << i << " - " << addrs[i]->toString();
+    }
+}
+
+void test_iface() {
+    std::multimap<std::string, std::pair<srvpro::Address::ptr, uint32_t> > results;
+
+    bool v = srvpro::Address::GetInterfaceAddresses(results);
+    if(!v) {
+        SRVPRO_LOG_ERROR(g_logger) << "GetInterfaceAddress Fail";
+        return;
+    }
+
+    for(auto& i : results) {
+        SRVPRO_LOG_INFO(g_logger) << i.first << " - " << i.second.first->toString() << " - " << i.second.second;
+    }
+}
+
+void test_ipv4() {
+    //auto addr = sylar::IPAddress::Create("www.sylar.top");
+    auto addr = srvpro::IPAddress::Create("127.0.0.8");
+    if(addr) {
+        SRVPRO_LOG_INFO(g_logger) << addr->toString();
+    }
+}
+
 int main() {
     std::cout << "Hello SrvPro" << std::endl;
     /*srvpro::Logger::ptr logger(new srvpro::Logger);
@@ -469,8 +505,12 @@ int main() {
     //test_sleep();
 
     //test socket_io_hook
-    test_sock();
+    /*test_sock();
     srvpro::IOManager iom;
-    iom.schedule(test_sock);
+    iom.schedule(test_sock);*/
+
+    //test address
+    //test_address();
+    test_iface();
     return 0;
 }

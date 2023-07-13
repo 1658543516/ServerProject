@@ -20,6 +20,188 @@ namespace srvpro {
         return (1 << (sizeof(T) * 8 - bits)) - 1;
     }
 
+    template<class T>
+    static uint32_t CountBytes(T value) {
+        uint32_t result = 0;
+        for (; value; ++result) {
+            value &= value - 1;
+        }
+        return result;
+    }
+
+    Address::ptr Address::LookupAny(const std::string &host,
+                                    int family, int type, int protocol) {
+        std::vector<Address::ptr> result;
+        if (Lookup(result, host, family, type, protocol)) {
+            return result[0];
+        }
+        return nullptr;
+    }
+
+    IPAddress::ptr Address::LookupAnyIPAddress(const std::string &host,
+                                               int family, int type, int protocol) {
+        std::vector<Address::ptr> result;
+        if (Lookup(result, host, family, type, protocol)) {
+            //for(auto& i : result) {
+            //    std::cout << i->toString() << std::endl;
+            //}
+            for (auto &i: result) {
+                IPAddress::ptr v = std::dynamic_pointer_cast<IPAddress>(i);
+                if (v) {
+                    return v;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+
+    bool Address::Lookup(std::vector<Address::ptr> &result, const std::string &host,
+                         int family, int type, int protocol) {
+        addrinfo hints, *results, *next;
+        hints.ai_flags = 0;
+        hints.ai_family = family;
+        hints.ai_socktype = type;
+        hints.ai_protocol = protocol;
+        hints.ai_addrlen = 0;
+        hints.ai_canonname = NULL;
+        hints.ai_addr = NULL;
+        hints.ai_next = NULL;
+
+        std::string node;
+        const char *service = NULL;
+
+        //检查 ipv6address serivce
+        if (!host.empty() && host[0] == '[') {
+            const char *endipv6 = (const char *) memchr(host.c_str() + 1, ']', host.size() - 1);
+            if (endipv6) {
+                //TODO check out of range
+                if (*(endipv6 + 1) == ':') {
+                    service = endipv6 + 2;
+                }
+                node = host.substr(1, endipv6 - host.c_str() - 1);
+            }
+        }
+
+        //检查 node serivce
+        if (node.empty()) {
+            service = (const char *) memchr(host.c_str(), ':', host.size());
+            if (service) {
+                if (!memchr(service + 1, ':', host.c_str() + host.size() - service - 1)) {
+                    node = host.substr(0, service - host.c_str());
+                    ++service;
+                }
+            }
+        }
+
+        if (node.empty()) {
+            node = host;
+        }
+        int error = getaddrinfo(node.c_str(), service, &hints, &results);
+        if (error) {
+            SRVPRO_LOG_DEBUG(g_logger) << "Address::Lookup getaddress(" << host << ", "
+                                       << family << ", " << type << ") err=" << error << " errstr="
+                                       << gai_strerror(error);
+            return false;
+        }
+
+        next = results;
+        while (next) {
+            result.push_back(Create(next->ai_addr, (socklen_t) next->ai_addrlen));
+            //SYLAR_LOG_INFO(g_logger) << ((sockaddr_in*)next->ai_addr)->sin_addr.s_addr;
+            next = next->ai_next;
+        }
+
+        freeaddrinfo(results);
+        return !result.empty();
+    }
+
+    bool Address::GetInterfaceAddresses(std::multimap<std::string, std::pair<Address::ptr, uint32_t> > &result,
+                                        int family) {
+        struct ifaddrs *next, *results;
+        if (getifaddrs(&results) != 0) {
+            SRVPRO_LOG_DEBUG(g_logger) << "Address::GetInterfaceAddresses getifaddrs "
+                                          " err=" << errno << " errstr=" << strerror(errno);
+            return false;
+        }
+
+        try {
+            for (next = results; next; next = next->ifa_next) {
+                Address::ptr addr;
+                uint32_t prefix_len = ~0u;
+                if (family != AF_UNSPEC && family != next->ifa_addr->sa_family) {
+                    continue;
+                }
+                switch (next->ifa_addr->sa_family) {
+                    case AF_INET: {
+                        addr = Create(next->ifa_addr, sizeof(sockaddr_in));
+                        uint32_t netmask = ((sockaddr_in *) next->ifa_netmask)->sin_addr.s_addr;
+                        prefix_len = CountBytes(netmask);
+                    }
+                        break;
+                    case AF_INET6: {
+                        addr = Create(next->ifa_addr, sizeof(sockaddr_in6));
+                        in6_addr &netmask = ((sockaddr_in6 *) next->ifa_netmask)->sin6_addr;
+                        prefix_len = 0;
+                        for (int i = 0; i < 16; ++i) {
+                            prefix_len += CountBytes(netmask.s6_addr[i]);
+                        }
+                    }
+                        break;
+                    default:
+                        break;
+                }
+
+                if (addr) {
+                    result.insert(std::make_pair(next->ifa_name,
+                                                 std::make_pair(addr, prefix_len)));
+                }
+            }
+        } catch (...) {
+            SRVPRO_LOG_ERROR(g_logger) << "Address::GetInterfaceAddresses exception";
+            freeifaddrs(results);
+            return false;
+        }
+        freeifaddrs(results);
+        return !result.empty();
+    }
+
+    bool
+    Address::GetInterfaceAddresses(std::vector<std::pair<Address::ptr, uint32_t> > &result, const std::string &iface,
+                                   int family) {
+        if (iface.empty() || iface == "*") {
+            if (family == AF_INET || family == AF_UNSPEC) {
+                result.push_back(std::make_pair(Address::ptr(new IPv4Address()), 0u));
+            }
+            if (family == AF_INET6 || family == AF_UNSPEC) {
+                result.push_back(std::make_pair(Address::ptr(new IPv6Address()), 0u));
+            }
+            return true;
+        }
+
+        std::multimap<std::string, std::pair<Address::ptr, uint32_t> > results;
+
+        if (!GetInterfaceAddresses(results, family)) {
+            return false;
+        }
+
+        auto its = results.equal_range(iface);
+        for (; its.first != its.second; ++its.first) {
+            result.push_back(its.first->second);
+        }
+        return !result.empty();
+    }
+
+    int Address::getFamily() const {
+        return getAddr()->sa_family;
+    }
+
+    std::string Address::toString() const {
+        std::stringstream ss;
+        insert(ss);
+        return ss.str();
+    }
+
     Address::ptr Address::Create(const sockaddr *addr, socklen_t addrlen) {
         if (addr == nullptr) {
             return nullptr;
@@ -129,10 +311,10 @@ namespace srvpro {
 
     std::ostream &IPv4Address::insert(std::ostream &os) const {
         uint32_t addr = byteswapOnLittleEndian(m_addr.sin_addr.s_addr);
-        os << ((addr >> 24) & 0xff) << "."
-           << ((addr >> 16) & 0xff) << "."
+        os << (addr & 0xff) << "."
            << ((addr >> 8) & 0xff) << "."
-           << (addr & 0xff);
+           << ((addr >> 16) & 0xff) << "."
+           << ((addr >> 24) & 0xff);
         os << ":" << byteswapOnLittleEndian(m_addr.sin_port);
         return os;
     }
